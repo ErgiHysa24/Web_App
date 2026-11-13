@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block title %}{{ target.name }}{% endblock %}
+{% block content %}
+<div class="head">
+  <div><h1>{{ target.name }}</h1>
+  <p class="lead mono">{{ target.address }}</p></div>
+  <div class="actions">
+    {% if can_manage %}<a class="btn quiet" href="/targets/{{ target.id }}/edit">Modifica</a>{% endif %}
+    {% if can_scan and not target.archived %}<a class="btn" href="/scans/new?target={{ target.id }}">Analizza</a>{% endif %}
+  </div>
+</div>
+{% if target.archived %}<div class="note warn"><p>Questo obiettivo è archiviato: lo storico resta, ma non si possono avviare nuove scansioni.</p></div>{% endif %}
+{% if target.notes %}<p class="pre-wrap">{{ target.notes }}</p>{% endif %}
+
+{% if target.tags %}<p class="tags">{{ m.tags(target.tags) }}</p>{% endif %}
+<div class="verdict"><dl>
+  <dt>Proprietario</dt><dd>{{ target.owner.username if target.owner else '—' }}{% if target.created_by != user.id %} <span class="muted small">({{ 'puoi avviare scansioni' if can_scan else 'sola lettura' }})</span>{% endif %}</dd>
+  <dt>Accesso</dt><dd>{{ 'Chiave privata' if target.auth_method == 'key' else 'Password' }}{% if target.sudo_password_enc %}, con password di sudo dedicata{% endif %}</dd>
+  <dt>Chiave del server</dt><dd>{% if fingerprint %}<span class="mono">{{ fingerprint }}</span><br><span class="small muted">Registrata alla prima connessione. Se cambia, la scansione si ferma invece di collegarsi a una macchina diversa.</span>{% else %}<span class="muted">Verrà registrata alla prima scansione.</span>{% endif %}</dd>
+</dl></div>
+
+{% if trend %}
+<h2>Andamento del rischio</h2>
+<section class="panel">
+  <p class="small muted m0">Rischio da 0 a 100 a ogni scansione completata; un pallino vuoto indica una scansione con controlli non completati.</p>
+  <div class="chart-wrap">{{ trend }}</div>
+</section>
+{% endif %}
+
+{% if ports %}
+<h2>Porte aperte</h2>
+{% if not (ports.ran_internal or ports.ran_external) %}
+<p class="muted">Nell'ultima scansione Nmap non è stato eseguito: lancia una scansione completa per vedere le porte aperte.</p>
+{% elif not ports.ports %}
+<p>Nessuna porta aperta tra le più comuni nell'ultima scansione.</p>
+{% else %}
+<div class="wrap"><table class="list">
+  <thead><tr><th>Porta</th><th>Servizio</th><th>Vista</th><th>Problema</th></tr></thead>
+  <tbody>{% for p in ports.ports %}
+  <tr><td class="mono">{{ p.port }}/{{ p.proto }}</td><td>{{ p.service or '—' }}</td>
+    <td>{% if p.external and p.internal %}dall'interno e dall'esterno{% elif p.external %}dall'esterno{% else %}dall'interno{% endif %}</td>
+    <td>{% if p.severity %}{{ m.sev(p.severity) }} {{ p.risk }}{% else %}<span class="muted">nessuno noto</span>{% endif %}</td></tr>
+  {% endfor %}</tbody>
+</table></div>
+<p class="small muted">«Dall'esterno» = raggiungibile dal computer su cui gira WatchDog (opzione «Scansione Nmap anche dall'esterno»). <a href="/map">Vedi la mappa della rete</a></p>
+{% endif %}
+{% endif %}
+
+<h2>Storico delle scansioni</h2>
+{% if not scans %}
+<div class="empty"><p>Nessuna scansione per questo obiettivo.</p></div>
+{% else %}
+{% if done|length >= 2 %}
+<form method="get" action="/compare" class="filters">
+  <span>Confronta</span>
+  <select name="a" aria-label="Scansione precedente">{% for x in done %}<option value="{{ x.id }}" {% if loop.index == 2 %}selected{% endif %}>#{{ x.id }} del {{ x.finished_at|dt }}</option>{% endfor %}</select>
+  <span>con</span>
+  <select name="b" aria-label="Scansione successiva">{% for x in done %}<option value="{{ x.id }}">#{{ x.id }} del {{ x.finished_at|dt }}</option>{% endfor %}</select>
+  <button class="btn quiet small" type="submit">Mostra cosa è cambiato</button>
+</form>
+{% endif %}
+<div class="wrap"><table class="list">
+  <thead><tr><th>N.</th><th>Stato</th><th>Tipo</th><th>Esito</th><th>Richiesta</th><th class="r">Durata</th></tr></thead>
+  <tbody>{{ m.scan_rows(scans, false) }}</tbody>
+</table></div>
+{% endif %}
+
+{% if can_manage %}
+<h2 id="condivisione">Condivisione</h2>
+<p>Solo tu{% if not user.can('admin') %} e gli amministratori{% endif %} vedete questa macchina, a meno che non la condividi.</p>
+{% if target.shares %}
+<table class="list narrow">
+  <thead><tr><th>Utente</th><th>Può</th><th></th></tr></thead>
+  <tbody>{% for sh in target.shares %}
+  <tr><td>{{ sh.user.username }}{% if sh.user.full_name %} <span class="muted small">{{ sh.user.full_name }}</span>{% endif %}</td>
+    <td>{{ 'vedere e avviare scansioni' if sh.can_scan else 'solo vedere' }}</td>
+    <td class="r"><form method="post" action="/targets/{{ target.id }}/unshare/{{ sh.id }}">{{ m.csrf_field(csrf) }}<button class="btn quiet small" type="submit">Rimuovi</button></form></td></tr>
+  {% endfor %}</tbody>
+</table>
+{% endif %}
+<form method="post" action="/targets/{{ target.id }}/share" class="filters">
+  {{ m.csrf_field(csrf) }}
+  <input type="text" name="username" placeholder="Nome utente" aria-label="Nome utente con cui condividere" required autocapitalize="none" class="w12">
+  <label class="check m0"><input type="checkbox" name="can_scan" value="1"> anche avviare scansioni</label>
+  <button class="btn quiet small" type="submit">Condividi</button>
+</form>
+<p class="small muted">Chi riceve la condivisione non vede mai password e chiavi salvate.</p>
+
+<h2>Gestione</h2>
+<div class="actions">
+  {% if fingerprint %}
+  <form method="post" action="/targets/{{ target.id }}/reset-host-key">{{ m.csrf_field(csrf) }}
+    <button class="btn quiet" type="submit" title="Da usare se la macchina è stata reinstallata">Azzera la chiave del server</button></form>
+  {% endif %}
+  <form method="post" action="/targets/{{ target.id }}/archive">{{ m.csrf_field(csrf) }}
+    <input type="hidden" name="archived" value="{{ '0' if target.archived else '1' }}">
+    <button class="btn quiet" type="submit">{{ 'Ripristina' if target.archived else 'Archivia' }}</button></form>
+</div>
+<details class="more"><summary>Elimina definitivamente</summary>
+  <p>Elimina la macchina, le credenziali salvate, tutte le sue scansioni e i report. Non si può annullare.</p>
+  <form method="post" action="/targets/{{ target.id }}/delete">{{ m.csrf_field(csrf) }}
+    <button class="btn danger" type="submit">Elimina «{{ target.name }}» e il suo storico</button></form>
+</details>
+{% endif %}
+{% endblock %}

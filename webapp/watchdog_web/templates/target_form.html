@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}{% if target %}Modifica {{ target.name }}{% else %}Nuova macchina{% endif %}{% endblock %}
+{% block content %}
+<h1>{% if target %}Modifica «{{ target.name }}»{% else %}Nuova macchina{% endif %}</h1>
+<p class="lead">WatchDog si collega con questo utente e, dove serve, usa sudo. Password e chiavi vengono cifrate nel database e non sono più mostrate.</p>
+{% if error %}<div class="note error" role="alert"><p>{{ error }}</p></div>{% endif %}
+<form method="post" autocomplete="off">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <label for="name">Nome <span class="hint">Come lo riconosci: per esempio «Server web aula 3».</span></label>
+  <input type="text" id="name" name="name" value="{{ values.name or '' }}" maxlength="80" required>
+  <div class="row">
+    <div><label for="host">Indirizzo IP o nome host</label>
+      <input type="text" id="host" name="host" value="{{ values.host or '' }}" required autocapitalize="none" spellcheck="false"></div>
+    <div><label for="port">Porta SSH</label>
+      <input type="number" id="port" name="port" value="{{ values.port or 22 }}" min="1" max="65535" required></div>
+  </div>
+  <label for="ssh_user">Utente SSH</label>
+  <input type="text" id="ssh_user" name="ssh_user" value="{{ values.ssh_user or '' }}" required autocapitalize="none" spellcheck="false">
+
+  <fieldset>
+    <legend>Come accedere</legend>
+    <label class="check"><input type="radio" id="auth-password" name="auth_method" value="password" {% if values.auth_method != 'key' %}checked{% endif %}> Password</label>
+    <label class="check"><input type="radio" id="auth-key" name="auth_method" value="key" {% if values.auth_method == 'key' %}checked{% endif %}> Chiave privata SSH</label>
+    <div class="only-password">
+      <label for="secret-p">Password SSH {% if target %}<span class="hint">Lascia vuoto per non cambiarla.</span>{% endif %}</label>
+      <input type="password" id="secret-p" name="secret_password" autocomplete="new-password">
+    </div>
+    <div class="only-key">
+      <label for="secret-k">Chiave privata <span class="hint">Incolla il contenuto del file (per esempio id_ed25519), senza passphrase. Meglio una chiave creata apposta per WatchDog.{% if target %} Lascia vuoto per non cambiarla.{% endif %}</span></label>
+      <textarea id="secret-k" name="secret_key" spellcheck="false"></textarea>
+    </div>
+    <label for="sudo_password">Password di sudo <span class="hint">Solo se è diversa da quella SSH o se accedi con la chiave. Senza sudo molti controlli restano incompleti, e il report lo dice.{% if target and values.has_sudo_password %} Ne è già salvata una: lascia vuoto per non cambiarla.{% endif %}</span></label>
+    <input type="password" id="sudo_password" name="sudo_password" autocomplete="new-password">
+    {% if target and values.has_sudo_password %}<label class="check"><input type="checkbox" name="clear_sudo_password" value="1"> Elimina la password di sudo salvata</label>{% endif %}
+  </fieldset>
+
+  <label for="tags">Tag <span class="hint">Facoltativi, separati da virgole: per raggruppare e filtrare le macchine, per esempio «aula-3, linux, server».</span></label>
+  <input type="text" id="tags" name="tags" value="{{ values.tags or '' }}" maxlength="300" autocapitalize="none" spellcheck="false">
+  <label for="notes">Note <span class="hint">Facoltative: a cosa serve la macchina, chi la gestisce.</span></label>
+  <textarea class="prose" id="notes" name="notes">{{ values.notes or '' }}</textarea>
+  <p class="mt actions">
+    <button class="btn" type="submit">Salva macchina</button>
+    <a class="btn quiet" href="{% if target %}/targets/{{ target.id }}{% else %}/targets{% endif %}">Annulla</a>
+  </p>
+</form>
+{% endblock %}

@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+
+# Test e strumenti
+.pytest_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+
+# Configurazione e dati locali — NON versionare i segreti
+.env
+*.db
+*.sqlite3
+reports/
+
+# Report generati localmente (gli esempi versionati stanno in esempi/)
+webapp/reports/

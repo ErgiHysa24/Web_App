@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block title %}Scansioni{% endblock %}
+{% block content %}
+<div class="head">
+  <div><h1>Scansioni</h1><p class="lead">Più scansioni possono girare insieme, una per obiettivo; le altre aspettano in coda.</p></div>
+  {% if user.can('scan') %}<div class="actions"><a class="btn" href="/scans/new">Nuova scansione</a></div>{% endif %}
+</div>
+<form method="get" class="filters">
+  <select name="status" aria-label="Stato"><option value="">Tutti gli stati</option>{% for k, v in STATUS_LABEL.items() %}<option value="{{ k }}" {% if status == k %}selected{% endif %}>{{ v }}</option>{% endfor %}</select>
+  <select name="target" aria-label="Obiettivo"><option value="0">Tutti gli obiettivi</option>{% for t in targets %}<option value="{{ t.id }}" {% if target_id == t.id %}selected{% endif %}>{{ t.name }}</option>{% endfor %}</select>
+  <button class="btn quiet small" type="submit">Filtra</button>
+</form>
+<div data-queue="0|">
+{% if not scans %}
+<div class="empty"><p>Nessuna scansione{% if status or target_id %} con questi filtri{% endif %}.</p></div>
+{% else %}
+<div class="wrap"><table class="list">
+  <thead><tr><th>N.</th><th>Obiettivo</th><th>Stato</th><th>Tipo</th><th>Esito</th><th>Richiesta</th><th class="r">Durata</th></tr></thead>
+  <tbody>{{ m.scan_rows(scans) }}</tbody>
+</table></div>
+<p class="mt actions">
+  {% if page > 1 %}<a class="btn quiet small" href="?status={{ status }}&amp;target={{ target_id }}&amp;page={{ page - 1 }}">Più recenti</a>{% endif %}
+  {% if more %}<a class="btn quiet small" href="?status={{ status }}&amp;target={{ target_id }}&amp;page={{ page + 1 }}">Meno recenti</a>{% endif %}
+</p>
+{% endif %}
+</div>
+{% endblock %}

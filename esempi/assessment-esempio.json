@@ -1,0 +1,804 @@
+{
+  "target": "localhost",
+  "mode": "local",
+  "started_at": "2026-11-13T17:56:29.701191+00:00",
+  "finished_at": "2026-11-13T17:56:37.373385+00:00",
+  "risk": {
+    "score": 52,
+    "level": "MEDIUM"
+  },
+  "counts": {
+    "INFO": 13,
+    "LOW": 5,
+    "MEDIUM": 7,
+    "HIGH": 0,
+    "CRITICAL": 0
+  },
+  "risk_matrix": {
+    "by_level": {
+      "CRITICAL": 0,
+      "HIGH": 0,
+      "MEDIUM": 7,
+      "LOW": 5,
+      "INFO": 13
+    },
+    "cells": [
+      {
+        "impact": 1,
+        "probability": 1,
+        "count": 1
+      },
+      {
+        "impact": 1,
+        "probability": 2,
+        "count": 4
+      },
+      {
+        "impact": 2,
+        "probability": 2,
+        "count": 4
+      },
+      {
+        "impact": 2,
+        "probability": 3,
+        "count": 3
+      }
+    ]
+  },
+  "findings": [
+    {
+      "title": "Informazioni di sistema",
+      "category": "system_info",
+      "severity": "INFO",
+      "description": "Sistema rilevato: Ubuntu, 24.04, kernel 6.18.44-fc-v445, x86_64",
+      "evidence": "architecture: x86_64\nhostname: vm\nkernel: 6.18.44-fc-v445\nos_id: ubuntu\nos_name: Ubuntu\nos_version: 24.04",
+      "recommendation": "Nessuna azione richiesta.",
+      "source": "linux-check:linux",
+      "confidence": "HIGH",
+      "command": "",
+      "impact": 0,
+      "probability": 3,
+      "risk": 0,
+      "risk_level": "INFO",
+      "compliance": {},
+      "attack": []
+    },
+    {
+      "title": "Utente con shell di login: ubuntu",
+      "category": "users",
+      "severity": "INFO",
+      "description": "L'utente 'ubuntu' può effettuare un accesso interattivo (shell: /bin/bash).",
+      "evidence": "ubuntu:x:1000:1000:Ubuntu:/home/ubuntu:/bin/bash",
+      "recommendation": "Nessuna azione richiesta.",
+      "source": "users-collector:login-user",
+      "confidence": "MEDIUM",
+      "command": "",
+      "impact": 0,
+      "probability": 2,
+      "risk": 0,
+      "risk_level": "INFO",
+      "compliance": {
+        "cis": [
+          "5.1",
+          "5.4"
+        ],
+        "iso27001": [
+          "A.5.16",
+          "A.8.2"
+        ],
+        "nist": [
+          "AC-2",
+          "AC-6"
+        ]
+      },
+      "attack": []
+    },
+    {
+      "title": "Utente con shell di login: postgres",
+      "category": "users",
+      "severity": "INFO",
+      "description": "L'utente 'postgres' può effettuare un accesso interattivo (shell: /bin/bash).",
+      "evidence": "postgres:x:102:104:PostgreSQL administrator,,,:/var/lib/postgresql:/bin/bash",
+      "recommendation": "Nessuna azione richiesta.",
+      "source": "users-collector:login-user",
+      "confidence": "MEDIUM",
+      "command": "",
+      "impact": 0,
+      "probability": 2,
+      "risk": 0,
+      "risk_level": "INFO",
+      "compliance": {
+        "cis": [
+          "5.1",
+          "5.4"
+        ],
+        "iso27001": [
+          "A.5.16",
+          "A.8.2"
+        ],
+        "nist": [
+          "AC-2",
+          "AC-6"
+        ]
+      },
+      "attack": []
+    },
+    {
+      "title": "Utente con shell di login: claude",
+      "category": "users",
+      "severity": "INFO",
+      "description": "L'utente 'claude' può effettuare un accesso interattivo (shell: /bin/bash).",
+      "evidence": "claude:x:999:30001::/home/claude:/bin/bash",
+      "recommendation": "Nessuna azione richiesta.",
+      "source": "users-collector:login-user",
+      "confidence": "MEDIUM",
+      "command": "",
+      "impact": 0,
+      "probability": 2,
+      "risk": 0,
+      "risk_level": "INFO",
+      "compliance": {
+        "cis": [
+          "5.1",
+          "5.4"
+        ],
+        "iso27001": [
+          "A.5.16",
+          "A.8.2"
+        ],
+        "nist": [
+          "AC-2",
+          "AC-6"
+        ]
+      },
+      "attack": []
+    },
+    {
+      "title": "Gruppo privilegiato sudo: ubuntu",
+      "category": "privileges",
+      "severity": "INFO",
+      "description": "Questi utenti sono nel gruppo 'sudo': possono ottenere i privilegi di root.",
+      "evidence": "sudo:x:27:ubuntu",
+      "recommendation": "Verificare che la membership sia autorizzata.",
+      "source": "users-collector:privileged-group",
+      "confidence": "MEDIUM",
+      "command": "",
+      "impact": 0,
+      "probability": 2,
+      "risk": 0,
+      "risk_level": "INFO",
+      "compliance": {
+        "cis": [
+          "5.4"
+        ],
+        "iso27001": [
+          "A.8.2"
+        ],
+        "nist": [
+          "AC-6"
+        ]
+      },
+      "attack": []
+    },
+    {
+      "title": "Firewall non verificabile dentro un container",
+      "category": "firewall",
+      "severity": "INFO",
+      "description": "Il sistema è un container (docker): il firewall è quello dell'host e da qui non si vede. Va controllato sull'host.",
+      "evidence": "ufw/firewalld non attivi nel container; nessuna regola di input nel suo namespace",
+      "recommendation": "Verificare a mano su questo sistema: l'assenza di segnalazioni qui non significa che vada tutto bene.",
+      "source": "firewall:container",
+      "confidence": "LOW",
+      "command": "",
+      "impact": 0,
+      "probability": 1,
+      "risk": 0,
+      "risk_level": "INFO",
+      "compliance": {},
+      "attack": []
+    },
+    {
+      "title": "Stato dei servizi non verificabile",
+      "category": "services",
+      "severity": "INFO",
+      "description": "Non c'è un init system riconoscibile (tipico di un container): non si può sapere quali servizi sono attivi o in errore.",
+      "evidence": "init: unknown, container docker",
+      "recommendation": "Verificare a mano su questo sistema: l'assenza di segnalazioni qui non significa che vada tutto bene.",
+      "source": "services:unverifiable",
+      "confidence": "LOW",
+      "command": "",
+      "impact": 0,
+      "probability": 1,
+      "risk": 0,
+      "risk_level": "INFO",
+      "compliance": {},
+      "attack": []
+    },
+    {
+      "title": "Porte in ascolto non verificabili",
+      "category": "network",
+      "severity": "INFO",
+      "description": "Sul sistema non ci sono né `ss` né `netstat`: le porte aperte non sono state controllate.",
+      "evidence": "ss e netstat non trovati",
+      "recommendation": "Verificare a mano su questo sistema: l'assenza di segnalazioni qui non significa che vada tutto bene.",
+      "source": "services:ports-unverifiable",
+      "confidence": "LOW",
+      "command": "",
+      "impact": 0,
+      "probability": 1,
+      "risk": 0,
+      "risk_level": "INFO",
+      "compliance": {},
+      "attack": []
+    },
+    {
+      "title": "Programmi SUID di sistema: 10",
+      "category": "filesystem",
+      "severity": "INFO",
+      "description": "Programmi con il bit SUID previsti dalla distribuzione (passwd, sudo, mount…).",
+      "evidence": "/usr/bin/fusermount3\n/usr/bin/sudo\n/usr/bin/chfn\n/usr/bin/chsh\n/usr/bin/gpasswd\n/usr/bin/mount\n/usr/bin/newgrp\n/usr/bin/passwd\n/usr/bin/su\n/usr/bin/umount",
+      "recommendation": "Nessuna azione richiesta; tenerli aggiornati.",
+      "source": "filesystem:suid-standard",
+      "confidence": "HIGH",
+      "command": "",
+      "impact": 0,
+      "probability": 3,
+      "risk": 0,
+      "risk_level": "INFO",
+      "compliance": {
+        "cis": [
+          "3.3"
+        ],
+        "iso27001": [
+          "A.8.3"
+        ],
+        "nist": [
+          "AC-3",
+          "CM-6"
+        ]
+      },
+      "attack": []
+    },
+    {
+      "title": "File SGID trovati: 8",
+      "category": "filesystem",
+      "severity": "LOW",
+      "description": "File con bit SGID impostato.",
+      "evidence": "/usr/bin/chage\n/usr/bin/expiry\n/usr/bin/crontab\n/usr/bin/dotlockfile\n/usr/sbin/pam_extrausers_chkpwd\n/usr/sbin/unix_chkpwd\n/usr/sbin/postdrop\n/usr/sbin/postqueue",
+      "recommendation": "Verificare che ogni file SGID sia necessario.",
+      "source": "filesystem:sgid",
+      "confidence": "LOW",
+      "command": "",
+      "impact": 1,
+      "probability": 1,
+      "risk": 1,
+      "risk_level": "LOW",
+      "compliance": {
+        "cis": [
+          "3.3"
+        ],
+        "iso27001": [
+          "A.8.3"
+        ],
+        "nist": [
+          "AC-3",
+          "CM-6"
+        ]
+      },
+      "attack": [
+        "T1548.001"
+      ]
+    },
+    {
+      "title": "File scrivibili da tutti nelle cartelle temporanee: 7",
+      "category": "filesystem",
+      "severity": "LOW",
+      "description": "Nelle cartelle temporanee è comune, ma se uno di questi file viene letto o eseguito da un servizio o da uno script di root, chiunque può cambiarne il contenuto.",
+      "evidence": "/tmp/uv-setuptools-07c4d9ca76b772c3.lock\n/tmp/uv-setuptools-8be88abc6ab73f5f.lock\n/tmp/uv-setuptools-e07a12246690ac1f.lock\n/tmp/claude-0/-home-claude/a7d998da-f91a-5715-82ef-62101cc4208c/scratchpad/hunt/fs/etc/shadow\n/tmp/claude-0/-home-claude/a7d998da-f91a-5715-82ef-62101cc4208c/scratchpad/ln/private/etc/x\n/tmp/uv-bcb837755ba79986.lock\n/tmp/uv-ce9cd633bb00c47d.lock",
+      "recommendation": "Verificare che nessuno script privilegiato usi questi file.",
+      "source": "filesystem:world-writable-tmp",
+      "confidence": "MEDIUM",
+      "command": "",
+      "impact": 1,
+      "probability": 2,
+      "risk": 2,
+      "risk_level": "LOW",
+      "compliance": {
+        "cis": [
+          "3.3"
+        ],
+        "iso27001": [
+          "A.8.3"
+        ],
+        "nist": [
+          "AC-3",
+          "CM-6"
+        ]
+      },
+      "attack": []
+    },
+    {
+      "title": "Disco quasi pieno: /opt/claude-code (93%)",
+      "category": "filesystem",
+      "severity": "MEDIUM",
+      "description": "Il mount /opt/claude-code è utilizzato al 93%.",
+      "evidence": "/dev/vdc                                                                 386952   351860         27332      93% /opt/claude-code",
+      "recommendation": "Liberare spazio o estendere il filesystem.",
+      "source": "filesystem:disk-usage",
+      "confidence": "HIGH",
+      "command": "",
+      "impact": 2,
+      "probability": 3,
+      "risk": 6,
+      "risk_level": "MEDIUM",
+      "compliance": {
+        "cis": [
+          "8.3"
+        ],
+        "iso27001": [
+          "A.8.6"
+        ],
+        "nist": [
+          "AU-4"
+        ]
+      },
+      "attack": []
+    },
+    {
+      "title": "Pacchetti installati: 1037",
+      "category": "packages",
+      "severity": "INFO",
+      "description": "Rilevati 1037 pacchetti installati via apt.",
+      "evidence": "apt list --installed -> 1037 pacchetti",
+      "recommendation": "Nessuna azione richiesta.",
+      "source": "packages:apt-installed",
+      "confidence": "HIGH",
+      "command": "",
+      "impact": 0,
+      "probability": 3,
+      "risk": 0,
+      "risk_level": "INFO",
+      "compliance": {},
+      "attack": []
+    },
+    {
+      "title": "Aggiornamenti disponibili: 53",
+      "category": "packages",
+      "severity": "MEDIUM",
+      "description": "53 pacchetti hanno aggiornamenti disponibili.",
+      "evidence": "apt/noble-security 2.8.4ubuntu0.1 amd64 [upgradable from: 2.8.3]\nca-certificates/noble-updates,noble-security 20260816ubuntu0.24.04.1 all [upgradable from: 20260601~24.04.1]\ndistro-info-data/noble-updates,noble-security 2026.10.12-0ubuntu0.24.04.1 all [upgradable from: 0.72-0ubuntu0.24.04.1]\ngir1.2-glib-2.0/noble-updates 2.80.0-6ubuntu3.10 amd64 [upgradable from: 2.80.0-6ubuntu3.9]\ngit-man/noble-updates,noble-security 1:2.43.0-1ubuntu7.4 all [upgradable from: 1:2.43.0-1ubuntu7.3]\ngit/noble-updat",
+      "recommendation": "Applicare gli aggiornamenti: 'apt update && apt upgrade'.",
+      "source": "packages:apt-upgradable",
+      "confidence": "HIGH",
+      "command": "sudo apt-get update && sudo apt-get upgrade",
+      "impact": 2,
+      "probability": 3,
+      "risk": 6,
+      "risk_level": "MEDIUM",
+      "compliance": {
+        "cis": [
+          "7.3"
+        ],
+        "iso27001": [
+          "A.8.8"
+        ],
+        "nist": [
+          "SI-2"
+        ]
+      },
+      "attack": [
+        "T1190",
+        "T1068"
+      ]
+    },
+    {
+      "title": "Le password non hanno una scadenza ragionevole",
+      "category": "authentication",
+      "severity": "LOW",
+      "description": "PASS_MAX_DAYS vale 99999: le password nuove non scadono praticamente mai. Le linee guida CIS indicano al massimo 365 giorni.",
+      "evidence": "PASS_MAX_DAYS 99999",
+      "recommendation": "Impostare PASS_MAX_DAYS 365 (o secondo la politica aziendale). Vale per gli account creati dopo la modifica.",
+      "source": "auth-policy:pass-max-days",
+      "confidence": "MEDIUM",
+      "command": "",
+      "impact": 1,
+      "probability": 2,
+      "risk": 2,
+      "risk_level": "LOW",
+      "compliance": {
+        "cis": [
+          "5.2"
+        ],
+        "iso27001": [
+          "A.5.17",
+          "A.8.5"
+        ],
+        "nist": [
+          "IA-5"
+        ]
+      },
+      "attack": [
+        "T1110"
+      ]
+    },
+    {
+      "title": "Nessun controllo sulla qualità delle password",
+      "category": "authentication",
+      "severity": "MEDIUM",
+      "description": "PAM non usa pam_pwquality, pam_cracklib o pam_passwdqc: sono ammesse password banali.",
+      "evidence": "nessun riferimento in /etc/pam.d",
+      "recommendation": "Installare e configurare libpam-pwquality (minlen almeno 12).",
+      "source": "auth-policy:no-pwquality",
+      "confidence": "MEDIUM",
+      "command": "sudo apt-get install libpam-pwquality",
+      "impact": 2,
+      "probability": 2,
+      "risk": 4,
+      "risk_level": "MEDIUM",
+      "compliance": {
+        "cis": [
+          "5.2"
+        ],
+        "iso27001": [
+          "A.5.17",
+          "A.8.5"
+        ],
+        "nist": [
+          "IA-5"
+        ]
+      },
+      "attack": [
+        "T1110"
+      ]
+    },
+    {
+      "title": "Nessun blocco dopo tentativi di accesso falliti",
+      "category": "authentication",
+      "severity": "MEDIUM",
+      "description": "PAM non usa pam_faillock né pam_tally2: i tentativi di indovinare le password non vengono limitati a livello di account (un fail2ban può compensare per SSH).",
+      "evidence": "nessun riferimento in /etc/pam.d",
+      "recommendation": "Configurare pam_faillock (deny=5, unlock_time=900) o usare fail2ban.",
+      "source": "auth-policy:no-lockout",
+      "confidence": "MEDIUM",
+      "command": "",
+      "impact": 2,
+      "probability": 2,
+      "risk": 4,
+      "risk_level": "MEDIUM",
+      "compliance": {
+        "iso27001": [
+          "A.8.5"
+        ],
+        "nist": [
+          "AC-7"
+        ]
+      },
+      "attack": [
+        "T1110"
+      ]
+    },
+    {
+      "title": "sudo senza password per qualsiasi comando: claude",
+      "category": "authentication",
+      "severity": "MEDIUM",
+      "description": "Questi utenti o gruppi diventano root senza password: chi ne ottiene l'accesso ottiene root.",
+      "evidence": "claude ALL=(ALL) NOPASSWD: ALL",
+      "recommendation": "Limitare NOPASSWD ai soli comandi necessari, oppure richiedere la password.",
+      "source": "auth-policy:sudo-nopasswd-all",
+      "confidence": "HIGH",
+      "command": "",
+      "impact": 2,
+      "probability": 3,
+      "risk": 6,
+      "risk_level": "MEDIUM",
+      "compliance": {
+        "cis": [
+          "5.4"
+        ],
+        "iso27001": [
+          "A.8.2"
+        ],
+        "nist": [
+          "AC-6"
+        ]
+      },
+      "attack": [
+        "T1548.003"
+      ]
+    },
+    {
+      "title": "Parametri del kernel dell'host non valutabili dal container",
+      "category": "kernel",
+      "severity": "INFO",
+      "description": "Il sistema è un container (docker): i parametri sysctl non di rete appartengono al kernel dell'host e vanno controllati lì.",
+      "evidence": "kernel.randomize_va_space, kernel.kptr_restrict, kernel.dmesg_restrict, kernel.yama.ptrace_scope, kernel.unprivileged_bpf_disabled, fs.protected_hardlinks, fs.protected_symlinks, fs.suid_dumpable",
+      "recommendation": "Verificare a mano su questo sistema: l'assenza di segnalazioni qui non significa che vada tutto bene.",
+      "source": "kernel:container",
+      "confidence": "LOW",
+      "command": "",
+      "impact": 0,
+      "probability": 1,
+      "risk": 0,
+      "risk_level": "INFO",
+      "compliance": {},
+      "attack": []
+    },
+    {
+      "title": "Accetta i reindirizzamenti ICMP (net.ipv4.conf.all.accept_redirects=1)",
+      "category": "network",
+      "severity": "MEDIUM",
+      "description": "Un attaccante sulla rete può alterare le rotte del sistema.",
+      "evidence": "net.ipv4.conf.all.accept_redirects = 1 (consigliato: 0)",
+      "recommendation": "Impostare net.ipv4.conf.all.accept_redirects = 0 in /etc/sysctl.d/.",
+      "source": "kernel:net.ipv4.conf.all.accept_redirects",
+      "confidence": "MEDIUM",
+      "command": "echo 'net.ipv4.conf.all.accept_redirects = 0' | sudo tee -a /etc/sysctl.d/99-watchdog-hardening.conf && sudo sysctl -p /etc/sysctl.d/99-watchdog-hardening.conf",
+      "impact": 2,
+      "probability": 2,
+      "risk": 4,
+      "risk_level": "MEDIUM",
+      "compliance": {
+        "cis": [
+          "4.1"
+        ],
+        "iso27001": [
+          "A.8.9"
+        ],
+        "nist": [
+          "CM-6"
+        ]
+      },
+      "attack": []
+    },
+    {
+      "title": "Invia reindirizzamenti ICMP (net.ipv4.conf.all.send_redirects=1)",
+      "category": "network",
+      "severity": "LOW",
+      "description": "Una macchina che non fa da router non dovrebbe inviarli.",
+      "evidence": "net.ipv4.conf.all.send_redirects = 1 (consigliato: 0)",
+      "recommendation": "Impostare net.ipv4.conf.all.send_redirects = 0 in /etc/sysctl.d/.",
+      "source": "kernel:net.ipv4.conf.all.send_redirects",
+      "confidence": "MEDIUM",
+      "command": "echo 'net.ipv4.conf.all.send_redirects = 0' | sudo tee -a /etc/sysctl.d/99-watchdog-hardening.conf && sudo sysctl -p /etc/sysctl.d/99-watchdog-hardening.conf",
+      "impact": 1,
+      "probability": 2,
+      "risk": 2,
+      "risk_level": "LOW",
+      "compliance": {
+        "cis": [
+          "4.1"
+        ],
+        "iso27001": [
+          "A.8.9"
+        ],
+        "nist": [
+          "CM-6"
+        ]
+      },
+      "attack": []
+    },
+    {
+      "title": "Controllo dell'indirizzo sorgente disattivato (net.ipv4.conf.all.rp_filter=0)",
+      "category": "network",
+      "severity": "LOW",
+      "description": "Il filtro rp_filter riduce lo spoofing degli indirizzi IP.",
+      "evidence": "net.ipv4.conf.all.rp_filter = 0 (consigliato: 1)",
+      "recommendation": "Impostare net.ipv4.conf.all.rp_filter = 1 in /etc/sysctl.d/.",
+      "source": "kernel:net.ipv4.conf.all.rp_filter",
+      "confidence": "MEDIUM",
+      "command": "echo 'net.ipv4.conf.all.rp_filter = 1' | sudo tee -a /etc/sysctl.d/99-watchdog-hardening.conf && sudo sysctl -p /etc/sysctl.d/99-watchdog-hardening.conf",
+      "impact": 1,
+      "probability": 2,
+      "risk": 2,
+      "risk_level": "LOW",
+      "compliance": {
+        "cis": [
+          "4.1"
+        ],
+        "iso27001": [
+          "A.8.9"
+        ],
+        "nist": [
+          "CM-6"
+        ]
+      },
+      "attack": []
+    },
+    {
+      "title": "Servizi di log e audit non verificabili",
+      "category": "logging",
+      "severity": "INFO",
+      "description": "Non c'è un init system riconoscibile (tipico di un container): non si può sapere se auditd, syslog o fail2ban sono attivi.",
+      "evidence": "init: unknown, container docker",
+      "recommendation": "Verificare a mano su questo sistema: l'assenza di segnalazioni qui non significa che vada tutto bene.",
+      "source": "logging:unverifiable",
+      "confidence": "LOW",
+      "command": "",
+      "impact": 0,
+      "probability": 1,
+      "risk": 0,
+      "risk_level": "INFO",
+      "compliance": {},
+      "attack": []
+    },
+    {
+      "title": "Aggiornamenti di sicurezza automatici non attivi",
+      "category": "packages",
+      "severity": "MEDIUM",
+      "description": "Le correzioni di sicurezza non vengono applicate da sole: la macchina resta vulnerabile finché qualcuno non aggiorna a mano.",
+      "evidence": "pacchetto unattended-upgrades non installato",
+      "recommendation": "Installare unattended-upgrades e abilitare gli aggiornamenti di sicurezza automatici.",
+      "source": "updates:no-auto-updates",
+      "confidence": "MEDIUM",
+      "command": "sudo apt-get install unattended-upgrades && sudo dpkg-reconfigure -plow unattended-upgrades",
+      "impact": 2,
+      "probability": 2,
+      "risk": 4,
+      "risk_level": "MEDIUM",
+      "compliance": {
+        "cis": [
+          "7.3"
+        ],
+        "iso27001": [
+          "A.8.8"
+        ],
+        "nist": [
+          "SI-2"
+        ]
+      },
+      "attack": []
+    },
+    {
+      "title": "Protezioni del sistema non valutabili in un container",
+      "category": "protections",
+      "severity": "INFO",
+      "description": "SELinux, AppArmor e cifratura del disco appartengono all'host che esegue il container: vanno controllati lì.",
+      "evidence": "container docker",
+      "recommendation": "Verificare a mano su questo sistema: l'assenza di segnalazioni qui non significa che vada tutto bene.",
+      "source": "protections:container",
+      "confidence": "LOW",
+      "command": "",
+      "impact": 0,
+      "probability": 1,
+      "risk": 0,
+      "risk_level": "INFO",
+      "compliance": {},
+      "attack": []
+    }
+  ],
+  "tools_used": [
+    "linux",
+    "users",
+    "ssh_config",
+    "firewall",
+    "services",
+    "filesystem",
+    "packages",
+    "auth_policy",
+    "kernel",
+    "logging",
+    "updates",
+    "persistence",
+    "protections"
+  ],
+  "errors": [],
+  "cleanup_status": "NOT_RUN",
+  "metadata": {
+    "host": {
+      "platform": "linux",
+      "distro": "ubuntu",
+      "version": "24.04",
+      "name": "Ubuntu 24.04.5 LTS",
+      "family": "debian",
+      "package_manager": "apt",
+      "init": "unknown",
+      "container": "docker",
+      "architecture": "x86_64"
+    },
+    "durations": {
+      "linux": {
+        "run": 0.0
+      },
+      "users": {
+        "run": 0.0
+      },
+      "ssh_config": {
+        "run": 0.0
+      },
+      "firewall": {
+        "run": 0.1
+      },
+      "services": {
+        "run": 0.0
+      },
+      "filesystem": {
+        "run": 2.4
+      },
+      "packages": {
+        "run": 4.8
+      },
+      "auth_policy": {
+        "run": 0.0
+      },
+      "kernel": {
+        "run": 0.0
+      },
+      "logging": {
+        "run": 0.0
+      },
+      "updates": {
+        "run": 0.1
+      },
+      "persistence": {
+        "run": 0.2
+      },
+      "protections": {
+        "run": 0.0
+      }
+    },
+    "attack": {
+      "version": "20.0",
+      "layer": null,
+      "layer_platforms": [],
+      "techniques": [
+        {
+          "id": "T1110",
+          "name": "Brute Force",
+          "tactic": "credential-access",
+          "count": 3,
+          "worst": "MEDIUM",
+          "findings": [
+            "Le password non hanno una scadenza ragionevole",
+            "Nessun controllo sulla qualità delle password",
+            "Nessun blocco dopo tentativi di accesso falliti"
+          ],
+          "coverage": "unknown"
+        },
+        {
+          "id": "T1068",
+          "name": "Exploitation for Privilege Escalation",
+          "tactic": "privilege-escalation",
+          "count": 1,
+          "worst": "MEDIUM",
+          "findings": [
+            "Aggiornamenti disponibili: 53"
+          ],
+          "coverage": "unknown"
+        },
+        {
+          "id": "T1190",
+          "name": "Exploit Public-Facing Application",
+          "tactic": "initial-access",
+          "count": 1,
+          "worst": "MEDIUM",
+          "findings": [
+            "Aggiornamenti disponibili: 53"
+          ],
+          "coverage": "unknown"
+        },
+        {
+          "id": "T1548.003",
+          "name": "Abuse Elevation Control Mechanism: Sudo and Sudo Caching",
+          "tactic": "privilege-escalation",
+          "count": 1,
+          "worst": "MEDIUM",
+          "findings": [
+            "sudo senza password per qualsiasi comando: claude"
+          ],
+          "coverage": "unknown"
+        },
+        {
+          "id": "T1548.001",
+          "name": "Abuse Elevation Control Mechanism: Setuid and Setgid",
+          "tactic": "privilege-escalation",
+          "count": 1,
+          "worst": "LOW",
+          "findings": [
+            "File SGID trovati: 8"
+          ],
+          "coverage": "unknown"
+        }
+      ]
+    }
+  }
+}

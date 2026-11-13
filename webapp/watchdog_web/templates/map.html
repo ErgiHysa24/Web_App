@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block title %}Mappa della rete{% endblock %}
+{% block content %}
+<div class="head">
+  <div><h1>Mappa della rete</h1>
+  <p class="lead">Le macchine raggruppate per tag, con le porte aperte trovate da Nmap nell'ultima scansione di ognuna.</p></div>
+</div>
+{% if tags or user.can('scan') %}{{ m.filters('/map', tags, tag, mine, user) }}{% endif %}
+{% if not nodes %}
+<div class="empty"><p>Nessuna macchina{% if tag or mine %} con questo filtro{% endif %}.</p></div>
+{% else %}
+<ul class="figures">
+  <li><b>{{ nodes|length }}</b> {{ 'macchina' if nodes|length == 1 else 'macchine' }}</li>
+  <li><b>{{ risky }}</b> {{ 'porta con un servizio rischioso' if risky == 1 else 'porte con servizi rischiosi' }}</li>
+  <li><b>{{ exposed }}</b> {{ 'porta raggiungibile' if exposed == 1 else 'porte raggiungibili' }} dall'esterno</li>
+</ul>
+<section class="panel">
+  <div class="legend m0">
+    <span><i class="lv-NONE"></i>porta senza problemi noti</span>
+    <span><i class="lv-LOW"></i>basso</span><span><i class="lv-MEDIUM"></i>medio</span><span><i class="lv-HIGH"></i>alto</span><span><i class="lv-CRITICAL"></i>critico</span>
+    <span><i class="ext"></i>bordo scuro: raggiungibile dal computer di WatchDog</span>
+    <span><i class="bar-l"></i>striscia a sinistra: rischio della macchina</span>
+  </div>
+  <div class="chart-wrap map">{{ chart }}</div>
+</section>
+{% if no_nmap %}
+<p class="note warn">Per {{ no_nmap|length }} {{ 'macchina' if no_nmap|length == 1 else 'macchine' }} l'ultima scansione non comprende Nmap ({% for t in no_nmap[:6] %}{{ t.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% if no_nmap|length > 6 %}…{% endif %}): lancia una scansione completa, con «Scansione Nmap anche dall'esterno», per vederne le porte.</p>
+{% endif %}
+<details class="more"><summary>Mostra come tabella</summary>
+<table class="list">
+  <thead><tr><th>Macchina</th><th>Indirizzo</th><th>Porte aperte</th></tr></thead>
+  <tbody>{% for n in nodes %}<tr>
+    <td><a href="/targets/{{ n.target.id }}">{{ n.target.name }}</a></td><td class="mono">{{ n.target.host }}</td>
+    <td>{% if not n.scan %}<span class="muted">mai analizzata</span>{% elif not n.ports or not (n.ports.ran_internal or n.ports.ran_external) %}<span class="muted">Nmap non eseguito</span>{% elif not n.ports.ports %}nessuna{% else %}{% for p in n.ports.ports %}<span class="mono">{{ p.port }}/{{ p.proto }}</span> {{ p.service }}{% if p.severity %} ({{ SEVERITY_LABEL[p.severity]|lower }}){% endif %}{% if p.external %}, dall'esterno{% endif %}{% if not loop.last %}; {% endif %}{% endfor %}{% endif %}</td>
+  </tr>{% endfor %}</tbody>
+</table></details>
+{% endif %}
+{% endblock %}

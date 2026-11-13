@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Codice di verifica{% endblock %}
+{% block bare %}
+<div class="login">
+  <div class="panel-side">
+    <h1>WatchDog</h1>
+    <p>Analizza la sicurezza dei sistemi del laboratorio via SSH e tiene lo storico dei risultati.</p>
+  </div>
+  <div class="form">
+    <h2>Codice di verifica</h2>
+    <p>Apri l'app di autenticazione sul telefono e scrivi il codice di 6 cifre di WatchDog.</p>
+    {% if error %}<div class="note error" role="alert"><p>{{ error }}</p></div>{% endif %}
+    <form method="post" action="/login/2fa">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <label for="code">Codice</label>
+      <input type="text" id="code" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9 ]{6,7}" maxlength="7" required autofocus class="w12">
+      <p class="mt"><button class="btn" type="submit">Verifica</button> <a class="btn quiet" href="/login">Annulla</a></p>
+    </form>
+    <p class="small muted">Telefono perso? Chiedi a un amministratore di azzerare la verifica in due passaggi del tuo utente.</p>
+  </div>
+</div>
+{% endblock %}

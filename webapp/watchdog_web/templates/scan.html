@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block title %}Scansione #{{ scan.id }} di {{ scan.target.name }}{% endblock %}
+{% block content %}
+<div class="head">
+  <div>
+    <p class="m0 small muted"><a href="/targets/{{ scan.target_id }}">{{ scan.target.name }}</a></p>
+    <h1>Scansione #{{ scan.id }}</h1>
+    <p class="lead">{{ m.state(scan) }} &nbsp; {{ PRESETS.get(scan.preset, (scan.preset,))[0] }}, richiesta il {{ scan.created_at|dt }}{% if scan.requester %} da {{ scan.requester.username }}{% endif %}</p>
+  </div>
+  <div class="actions">
+    {% if scan.active and can_scan and not scan.cancel_requested %}
+    <form method="post" action="/scans/{{ scan.id }}/cancel">{{ m.csrf_field(csrf) }}<button class="btn danger" type="submit">Annulla scansione</button></form>
+    {% endif %}
+    {% if not scan.active and can_scan and not scan.target.archived %}<a class="btn quiet" href="/scans/new?target={{ scan.target_id }}">Ripeti</a>{% endif %}
+  </div>
+</div>
+
+{% if scan.active %}
+<div data-scan-live="/scans/{{ scan.id }}/status.json" data-status="{{ scan.status }}">
+  {% if scan.cancel_requested %}<div class="note warn"><p>Annullamento richiesto: la scansione si ferma alla fine del controllo in corso e rimuove i tool che aveva installato.</p></div>{% endif %}
+  <p><b data-step>{% if scan.status == 'queued' %}In coda, posizione {{ position }}{% else %}{{ scan.current_step }}{% endif %}</b>
+     <span class="muted num"> <span data-pct>{{ scan.progress }}%</span>, <span data-duration>{{ scan.duration_seconds|duration }}</span></span></p>
+  <progress class="bar" data-bar max="100" value="{{ scan.progress }}">{{ scan.progress }}%</progress>
+  <h2>Cosa sta facendo</h2>
+  <pre class="log" data-log tabindex="0">{{ scan.log }}</pre>
+  <p class="small muted">La pagina si aggiorna da sola. Puoi chiuderla: la scansione continua.</p>
+</div>
+
+{% elif scan.status in ('failed', 'cancelled') %}
+<div class="note {{ 'error' if scan.status == 'failed' else 'warn' }}">
+  <p><b>{{ 'La scansione non è riuscita: nessun risultato.' if scan.status == 'failed' else 'Scansione annullata: nessun risultato.' }}</b></p>
+  <p>{{ scan.error }}</p>
+</div>
+{% if scan.log %}<h2>Registro</h2><pre class="log">{{ scan.log }}</pre>{% endif %}
+
+{% else %}
+<div class="verdict">
+  <div class="score lv-{{ scan.risk_level }}"><b class="num">{{ scan.risk_score }}</b>su 100, rischio {{ SEVERITY_LABEL.get(scan.risk_level, scan.risk_level)|lower }}</div>
+  <dl>
+    <dt>Sistema</dt><dd>{{ scan.system_label or '—' }}</dd>
+    <dt>Conclusa</dt><dd>{{ scan.finished_at|dt }}, durata {{ scan.duration_seconds|duration }}</dd>
+    <dt>Controlli</dt><dd>{{ scan.tools|length }} eseguiti{% if scan.incomplete %}, <span class="flag">{{ scan.incomplete }} {{ "non completato" if scan.incomplete == 1 else "non completati" }}</span>{% endif %}</dd>
+  </dl>
+</div>
+
+{% if scan.incomplete %}
+<div class="note warn">
+  <p><b>Alcuni controlli non sono stati completati.</b> Per queste parti il sistema non è stato verificato: l'assenza di problemi qui non significa che vada tutto bene.</p>
+  <ul>{% for e in scan.summary.get('errors', [])[:12] %}<li>{{ e }}</li>{% endfor %}</ul>
+  {% if scan.summary.get('errors', [])|length > 12 %}<p class="small">Altri {{ scan.summary.errors|length - 12 }} nel report completo.</p>{% endif %}
+</div>
+{% endif %}
+
+<div class="actions">
+  {% if has_report %}<a class="btn" href="/scans/{{ scan.id }}/report" target="_blank" rel="noopener">Apri il report completo</a>
+  <a class="btn quiet" href="/scans/{{ scan.id }}/report?format=html&amp;download=1">Scarica HTML</a>
+  <a class="btn quiet" href="/scans/{{ scan.id }}/report?format=json">JSON</a>
+  <a class="btn quiet" href="/scans/{{ scan.id }}/report?format=md">Markdown</a>{% endif %}
+  {% if previous %}<a class="btn quiet" href="/compare?a={{ previous.id }}&amp;b={{ scan.id }}">Confronta con la #{{ previous.id }}</a>{% endif %}
+</div>
+
+<h2 id="risultati">Risultati per gravità</h2>
+<div class="strip">
+  {% for s in SEVERITIES %}
+  <a class="lv-{{ s }} {% if severity == s %}on{% endif %}" href="?severity={{ s }}{% if area %}&amp;area={{ area }}{% endif %}#risultati"><b class="num">{{ scan.counts.get(s, 0) }}</b><span>{{ SEVERITY_LABEL[s] }}</span></a>
+  {% endfor %}
+</div>
+{% if area_chart %}
+<h2>Problemi per area e gravità</h2>
+<section class="panel">
+  <div class="legend m0">{% for s in SEVERITIES[:4] %}<span><i class="lv-{{ s }}"></i>{{ SEVERITY_LABEL[s]|lower }}</span>{% endfor %}</div>
+  <div class="chart-wrap">{{ area_chart }}</div>
+  <p class="small muted m0">Clicca sul nome di un'area o su un pezzo della barra per vedere quei risultati.</p>
+</section>
+{% endif %}
+{% if not area_chart %}
+<h2>Risultati per area</h2>
+<div class="strip">
+  {% for key, name, desc in HEATMAP_AREAS %}{% set c = scan.areas.get(key) %}
+  <a class="lv-{{ c.worst if c else 'NONE' }} {% if area == key %}on{% endif %}" href="?area={{ key }}#risultati" title="{{ desc }}"><b class="num">{{ c.count if c else 0 }}</b><span>{{ AREA_SHORT[key] }}</span></a>
+  {% endfor %}
+</div>
+{% endif %}
+
+<form method="get" class="filters" action="#risultati">
+  <input type="search" name="q" value="{{ q }}" placeholder="Cerca nei risultati" aria-label="Cerca nei risultati">
+  {% if area %}<input type="hidden" name="area" value="{{ area }}">{% endif %}
+  {% if severity %}<input type="hidden" name="severity" value="{{ severity }}">{% endif %}
+  <button class="btn quiet small" type="submit">Cerca</button>
+  {% if area or severity or q %}<a href="/scans/{{ scan.id }}#risultati">Togli i filtri</a>{% else %}<a href="?severity=ALL#risultati">Mostra anche le informazioni</a>{% endif %}
+</form>
+<p class="muted small">{{ findings|length }} risultati{% if area %} nell'area «{{ AREA_SHORT[area] }}»{% endif %}{% if severity in SEVERITY_LABEL %} di gravità «{{ SEVERITY_LABEL[severity]|lower }}»{% endif %}. Clicca su un risultato per vedere prove e rimedio.</p>
+
+{% if not findings %}
+<div class="empty"><p>{% if area or severity or q %}Nessun risultato con questi filtri.{% elif scan.incomplete %}Nessun problema trovato dai controlli completati. Guarda sopra quali non sono stati completati.{% else %}Nessun problema trovato dai controlli eseguiti.{% endif %}</p></div>
+{% endif %}
+{% for f in findings %}
+<details class="finding" id="f{{ f.position }}">
+  <summary>{{ m.sev(f.severity) }}<span class="t">{{ f.title }}</span><span class="a">{{ AREA_SHORT.get(f.area, f.area) }}</span></summary>
+  <div class="body">
+    {% if f.description %}<p>{{ f.description }}</p>{% endif %}
+    {% if f.evidence %}<h3>Cosa è stato trovato</h3><pre>{{ f.evidence }}</pre>{% endif %}
+    {% if f.recommendation %}<h3>Cosa fare</h3><p>{{ f.recommendation }}</p>{% endif %}
+    {% if f.command %}<h3>Comando suggerito (controllalo prima di eseguirlo)</h3><pre>{{ f.command }}</pre>{% endif %}
+    <p class="refs">Origine <span class="mono">{{ f.source }}</span>, affidabilità {{ f.confidence|lower }}{% for fw, label in [('cis', 'CIS'), ('iso27001', 'ISO 27001'), ('nist', 'NIST'), ('attack', 'MITRE ATT&CK')] %}{% if f.refs.get(fw) %}; {{ label }} {{ f.refs[fw]|join(', ') }}{% endif %}{% endfor %}</p>
+  </div>
+</details>
+{% endfor %}
+
+{% if can_manage %}
+<details class="mt2 more"><summary>Elimina questa scansione</summary>
+  <form method="post" action="/scans/{{ scan.id }}/delete">{{ m.csrf_field(csrf) }}<button class="btn danger" type="submit">Elimina scansione e report</button></form>
+</details>
+{% endif %}
+{% endif %}
+{% endblock %}

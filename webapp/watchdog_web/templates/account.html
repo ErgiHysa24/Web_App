@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block title %}Il tuo profilo{% endblock %}
+{% block content %}
+<h1>{{ user.full_name or user.username }}</h1>
+<p class="lead">{{ user.username }}, {{ ROLE_LABEL[user.role]|lower }}</p>
+{% if error %}<div class="note error" role="alert"><p>{{ error }}</p></div>{% endif %}
+
+<h2>Cambia password</h2>
+<form method="post" action="/account/password">
+  {{ m.csrf_field(csrf) }}
+  <label for="current">Password attuale</label><input type="password" id="current" name="current" required autocomplete="current-password">
+  <label for="new">Nuova password <span class="hint">Almeno 12 caratteri.</span></label><input type="password" id="new" name="new" required autocomplete="new-password">
+  <label for="repeat">Ripeti la nuova password</label><input type="password" id="repeat" name="repeat" required autocomplete="new-password">
+  <p class="mt"><button class="btn" type="submit">Cambia password</button></p>
+</form>
+
+<h2>Verifica in due passaggi</h2>
+{% if user.totp_enabled %}
+<p>Attiva: all'accesso, dopo la password, serve il codice dell'app sul telefono.</p>
+{% if not requires_2fa %}
+<details class="more"><summary>Disattiva</summary>
+<form method="post" action="/account/2fa/disable">
+  {{ m.csrf_field(csrf) }}
+  <div class="row">
+    <div><label for="d-password">Password</label><input type="password" id="d-password" name="password" required autocomplete="current-password"></div>
+    <div><label for="d-code">Codice dell'app</label><input type="text" id="d-code" name="code" inputmode="numeric" maxlength="7" required></div>
+  </div>
+  <p class="mt"><button class="btn danger" type="submit">Disattiva la verifica in due passaggi</button></p>
+</form></details>
+{% else %}<p class="small muted">Per il tuo ruolo è obbligatoria e non si può disattivare.</p>{% endif %}
+{% else %}
+<p>Non attiva. Con la verifica in due passaggi, chi scopre la tua password non riesce comunque a entrare.</p>
+<p><a class="btn quiet" href="/account/2fa">Attiva</a></p>
+{% endif %}
+
+<h2>Token per l'API</h2>
+<p>Servono agli altri strumenti del laboratorio per avviare scansioni e leggere i risultati al posto tuo. Un token non può fare più di quanto puoi fare tu, scade da solo e si può limitare alla sola lettura. Lo schema dell'API è su <span class="mono">/api/v1/openapi.json</span> (serve il token).</p>
+{% if new_token %}
+<div class="note ok"><p><b>Copia il token adesso: non verrà più mostrato.</b></p>
+<p><span class="token">{{ new_token }}</span></p>
+<pre>curl -H "Authorization: Bearer {{ new_token }}" {{ request.base_url }}api/v1/targets</pre></div>
+{% endif %}
+{% if tokens %}
+<table class="list">
+  <thead><tr><th>Nome</th><th>Inizia con</th><th>Permessi</th><th>Scade</th><th>Ultimo uso</th><th></th></tr></thead>
+  <tbody>{% for t in tokens %}
+  <tr><td>{{ t.name }}</td><td class="mono">{{ t.prefix }}…</td><td>{{ 'Sola lettura' if t.read_only else 'Lettura e scansioni' }}</td><td class="num">{{ t.expires_at|dt }}</td><td class="num">{{ t.last_used_at|dt }}</td>
+  <td class="r">{% if t.revoked %}<span class="muted">Revocato</span>{% elif t.expired %}<span class="muted">Scaduto</span>{% else %}<form method="post" action="/account/tokens/{{ t.id }}/revoke">{{ m.csrf_field(csrf) }}<button class="btn danger small" type="submit">Revoca</button></form>{% endif %}</td></tr>
+  {% endfor %}</tbody>
+</table>
+{% endif %}
+<form method="post" action="/account/tokens/new" class="filters">
+  {{ m.csrf_field(csrf) }}
+  <input class="w22" type="text" name="name" placeholder="A cosa serve, per esempio «tool pentest»" aria-label="Nome del token" maxlength="80" required>
+  <select name="days" aria-label="Durata">{% for d in token_days %}<option value="{{ d }}" {% if d == 90 %}selected{% endif %}>scade tra {{ d }} giorni</option>{% endfor %}</select>
+  {% if user.can('scan') %}<select name="scope" aria-label="Permessi"><option value="read">sola lettura</option><option value="scan">lettura e scansioni</option></select>{% endif %}
+  <button class="btn quiet" type="submit">Crea token</button>
+</form>
+{% endblock %}

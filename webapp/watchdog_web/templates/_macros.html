@@ -1,0 +1,27 @@
+{% macro csrf_field(csrf) %}<input type="hidden" name="csrf" value="{{ csrf }}">{% endmacro %}
+{% macro sev(s) %}<span class="sev sev-{{ s }}">{{ SEVERITY_LABEL.get(s, s) }}</span>{% endmacro %}
+{% macro state(scan) %}<span class="state state-{{ scan.status }}">{{ STATUS_LABEL.get(scan.status, scan.status) }}</span>{% endmacro %}
+{% macro counts(scan) %}{% for s in SEVERITIES[:4] %}{% if scan.counts.get(s) %}<span class="sev n sev-{{ s }}" title="{{ SEVERITY_LABEL[s] }}">{{ scan.counts[s] }}</span> {% endif %}{% endfor %}{% if not (scan.counts.get('CRITICAL') or scan.counts.get('HIGH') or scan.counts.get('MEDIUM') or scan.counts.get('LOW')) %}<span class="muted">nessun problema</span>{% endif %}{% endmacro %}
+{% macro scan_rows(scans, show_target=True) %}
+{% for x in scans %}
+<tr>
+  <td class="num"><a href="/scans/{{ x.id }}">#{{ x.id }}</a></td>
+  {% if show_target %}<td><a href="/targets/{{ x.target_id }}">{{ x.target.name }}</a></td>{% endif %}
+  <td>{{ state(x) }}{% if x.status == 'done' and x.incomplete %} <span class="flag" title="Controlli non completati">{{ x.incomplete }} non completati</span>{% endif %}</td>
+  <td>{{ PRESETS.get(x.preset, (x.preset,))[0] }}</td>
+  <td class="esito">{% if x.status == 'done' %}<span class="sev lv-{{ x.risk_level }}">{{ x.risk_score }}/100</span> {{ counts(x) }}{% elif x.status in ('failed', 'cancelled') %}<span class="muted small pre-wrap">{{ x.error|truncate(90) }}</span>{% else %}<span class="muted">{{ x.current_step }}</span>{% endif %}</td>
+  <td class="num">{{ x.created_at|dt(true) }}</td>
+  <td class="num r">{{ x.duration_seconds|duration }}</td>
+</tr>
+{% endfor %}
+{% endmacro %}
+
+{% macro tags(list, base='') %}{% for tg in list or [] %}<a class="tag" href="{{ base or '/' }}?tag={{ tg|urlencode }}">{{ tg }}</a>{% endfor %}{% endmacro %}
+{% macro filters(base, tags, tag, mine, user) %}
+<nav class="chips" aria-label="Filtra per tag">
+  <a class="chip-f {% if not tag and not mine %}on{% endif %}" href="{{ base }}">Tutte</a>
+  {% if user.can('scan') %}<a class="chip-f {% if mine %}on{% endif %}" href="{{ base }}?mine=1{% if tag %}&amp;tag={{ tag|urlencode }}{% endif %}">Solo le mie</a>{% endif %}
+  {% for tg in tags %}<a class="chip-f tagf {% if tag == tg %}on{% endif %}" href="{{ base }}?tag={{ tg|urlencode }}{% if mine %}&amp;mine=1{% endif %}">{{ tg }}</a>{% endfor %}
+</nav>
+{% endmacro %}
+{% macro cell_tip(name, sevs) %}{% set parts = [] %}{% for s in SEVERITIES[:4] %}{% if sevs.get(s) %}{% set _ = parts.append(sevs[s] ~ ' ' ~ SEVERITY_LABEL[s]|lower) %}{% endif %}{% endfor %}{{ parts|join(', ') }}{% endmacro %}

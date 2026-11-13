@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block title %}Utenti{% endblock %}
+{% block content %}
+<h1>Utenti</h1>
+{% if pending %}
+<section class="panel" id="richieste">
+<h2 class="mt0">Richieste di registrazione</h2>
+<p class="small muted">Hanno già attivato la verifica in due passaggi. Approva solo chi conosci: scegli il ruolo, potrai cambiarlo dopo.</p>
+<table class="list">
+  <thead><tr><th>Utente</th><th>Richiesta</th><th>Ruolo</th><th></th></tr></thead>
+  <tbody>{% for u in pending %}
+  <tr><td><b>{{ u.username }}</b>{% if u.full_name %}<br><span class="small muted">{{ u.full_name }}</span>{% endif %}</td>
+    <td class="num">{{ u.created_at|dt }}</td>
+    <td><select name="role" form="ap{{ u.id }}" aria-label="Ruolo per {{ u.username }}"><option value="analyst">{{ ROLE_LABEL['analyst'] }}</option><option value="viewer">{{ ROLE_LABEL['viewer'] }}</option></select></td>
+    <td class="r actions">
+      <form id="ap{{ u.id }}" method="post" action="/users/{{ u.id }}/approve">{{ m.csrf_field(csrf) }}<button class="btn small" type="submit">Approva</button></form>
+      <form method="post" action="/users/{{ u.id }}/reject">{{ m.csrf_field(csrf) }}<button class="btn danger small" type="submit">Rifiuta</button></form>
+    </td></tr>
+  {% endfor %}</tbody>
+</table>
+</section>
+{% endif %}
+<p class="lead">Solo lettura: vede le macchine condivise con lui. Analista: aggiunge le sue macchine e le analizza. Amministratore: vede tutte le macchine e gestisce gli utenti.</p>
+{% if error %}<div class="note error" role="alert"><p>{{ error }}</p></div>{% endif %}
+<div class="wrap"><table class="list">
+  <thead><tr><th>Utente</th><th>Ultimo accesso</th><th>Verifica in 2 passaggi</th><th>Ruolo</th><th>Stato</th><th>Nuova password</th><th></th></tr></thead>
+  <tbody>
+  {% for u in users %}
+  <tr>
+    <td><b>{{ u.username }}</b>{% if u.full_name %}<br><span class="small muted">{{ u.full_name }}</span>{% endif %}</td>
+    <td class="num">{{ u.last_login_at|dt }}{% if u.must_change_password %}<br><span class="small muted">deve cambiare la password</span>{% endif %}</td>
+    <td>{% if u.totp_enabled %}Attiva <form method="post" action="/users/{{ u.id }}/reset-2fa" class="inline">{{ m.csrf_field(csrf) }}<button class="btn quiet small" type="submit" title="Se ha perso il telefono">Azzera</button></form>{% else %}<span class="muted">No</span>{% endif %}</td>
+    <td><select name="role" form="u{{ u.id }}" aria-label="Ruolo di {{ u.username }}">{% for r in roles %}<option value="{{ r }}" {% if u.role == r %}selected{% endif %}>{{ ROLE_LABEL[r] }}</option>{% endfor %}</select></td>
+    <td><label class="m0 check"><input type="checkbox" name="active" value="1" form="u{{ u.id }}" {% if u.active %}checked{% endif %}> Attivo</label></td>
+    <td><input class="w12" type="password" name="password" form="u{{ u.id }}" autocomplete="new-password" placeholder="lascia vuoto" aria-label="Nuova password per {{ u.username }}"></td>
+    <td class="r"><form id="u{{ u.id }}" method="post" action="/users/{{ u.id }}/edit">{{ m.csrf_field(csrf) }}<button class="btn quiet small" type="submit">Salva</button></form></td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+
+<h2>Nuovo utente</h2>
+<form method="post" action="/users/new" autocomplete="off">
+  {{ m.csrf_field(csrf) }}
+  <div class="row">
+    <div><label for="username">Nome utente</label><input type="text" id="username" name="username" value="{{ values.username or '' }}" required autocapitalize="none"></div>
+    <div><label for="full_name">Nome e cognome</label><input type="text" id="full_name" name="full_name" value="{{ values.full_name or '' }}"></div>
+  </div>
+  <div class="row">
+    <div><label for="role">Ruolo</label><select id="role" name="role">{% for r in roles|reverse %}<option value="{{ r }}" {% if values.role == r %}selected{% endif %}>{{ ROLE_LABEL[r] }}</option>{% endfor %}</select></div>
+    <div><label for="password">Password iniziale <span class="hint">Almeno 12 caratteri. Al primo accesso l'utente dovrà cambiarla.</span></label><input type="password" id="password" name="password" required autocomplete="new-password"></div>
+  </div>
+  <p class="mt"><button class="btn" type="submit">Crea utente</button></p>
+</form>
+{% endblock %}

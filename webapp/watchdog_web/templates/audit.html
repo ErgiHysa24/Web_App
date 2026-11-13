@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Registro attività{% endblock %}
+{% block content %}
+<h1>Registro attività</h1>
+<p class="lead">Accessi, scansioni avviate e modifiche: chi ha fatto cosa, quando e da dove.</p>
+<div class="wrap"><table class="list">
+  <thead><tr><th>Quando</th><th>Utente</th><th>Azione</th><th>Dettaglio</th><th>Indirizzo</th></tr></thead>
+  <tbody>{% for r in rows %}
+  <tr><td class="num">{{ r.at|dt }}</td><td>{{ r.username or '—' }}</td><td class="mono">{{ r.action }}</td><td>{{ r.detail }}</td><td class="mono">{{ r.ip }}</td></tr>
+  {% endfor %}</tbody>
+</table></div>
+<p class="mt actions">
+  {% if page > 1 %}<a class="btn quiet small" href="?page={{ page - 1 }}">Più recenti</a>{% endif %}
+  {% if more %}<a class="btn quiet small" href="?page={{ page + 1 }}">Meno recenti</a>{% endif %}
+</p>
+{% endblock %}

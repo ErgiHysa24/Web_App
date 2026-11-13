@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Registrati{% endblock %}
+{% block bare %}
+<div class="login">
+  <div class="panel-side">
+    <h1>WatchDog</h1>
+    <p>Crea il tuo account per analizzare le tue macchine del laboratorio.</p>
+    <ol class="side-steps">
+      <li>Scegli nome utente e password</li>
+      <li>Attiva la verifica in due passaggi con il telefono</li>
+      <li>Un amministratore approva la richiesta</li>
+    </ol>
+  </div>
+  <div class="form">
+    <h2>Registrati</h2>
+    {% if error %}<div class="note error" role="alert"><p>{{ error }}</p></div>{% endif %}
+    <form method="post" action="/register" autocomplete="off">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <label for="username">Nome utente <span class="hint">Lettere minuscole, numeri, punto o trattino.</span></label>
+      <input type="text" id="username" name="username" value="{{ values.username or '' }}" required autocapitalize="none" spellcheck="false" autofocus maxlength="64">
+      <label for="full_name">Nome e cognome <span class="hint">Facoltativo: aiuta l'amministratore a riconoscerti.</span></label>
+      <input type="text" id="full_name" name="full_name" value="{{ values.full_name or '' }}" maxlength="120">
+      <label for="password">Password <span class="hint">Almeno 12 caratteri. Una frase di più parole va benissimo.</span></label>
+      <input type="password" id="password" name="password" required autocomplete="new-password">
+      <label for="repeat">Ripeti la password</label>
+      <input type="password" id="repeat" name="repeat" required autocomplete="new-password">
+      <p class="mt"><button class="btn" type="submit">Continua</button> <a class="btn quiet" href="/login">Ho già un account</a></p>
+    </form>
+  </div>
+</div>
+{% endblock %}

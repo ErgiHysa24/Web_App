@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block title %}Quadro generale{% endblock %}
+{% block content %}
+<div class="head">
+  <div>
+    <h1>Quadro generale</h1>
+    <p class="lead">Ogni riga è una macchina, ogni colonna un'area di sicurezza: il numero dice quanti problemi ci sono, il colore quanto è grave il peggiore.</p>
+  </div>
+  {% if user.can('scan') %}<div class="actions"><a class="btn" href="/scans/new{% if tag %}?tag={{ tag|urlencode }}{% endif %}">{% if tag %}Analizza le macchine «{{ tag }}»{% else %}Nuova scansione{% endif %}</a></div>{% endif %}
+</div>
+
+{% if pending_registrations %}
+<div class="note warn"><p><a href="/users#richieste">{{ pending_registrations }} {{ 'richiesta' if pending_registrations == 1 else 'richieste' }} di registrazione da approvare</a>.</p></div>
+{% endif %}
+
+{% if tags or user.can('scan') %}{{ m.filters('/', tags, tag, mine, user) }}{% endif %}
+
+{% if not rows %}
+<div class="empty">
+  {% if tag or mine %}<p>Nessuna macchina con questo filtro. <a href="/">Mostra tutte</a></p>
+  {% else %}
+  <h2 class="mt0">Nessuna macchina</h2>
+  <p>Una macchina da analizzare si aggiunge con indirizzo, utente SSH e password o chiave.</p>
+  {% if user.can('scan') %}<p><a class="btn" href="/targets/new">Aggiungi la prima macchina</a></p>
+  {% else %}<p>Vedrai qui le macchine che altri utenti condividono con te.</p>{% endif %}
+  {% endif %}
+</div>
+{% else %}
+<ul class="figures">
+  <li><b>{{ analysed }} di {{ rows|length }}</b> macchine analizzate</li>
+  <li><b>{{ totals.CRITICAL }}</b> problemi critici</li>
+  <li><b>{{ totals.HIGH }}</b> problemi alti</li>
+  <li><b>{{ totals.MEDIUM + totals.LOW }}</b> medi e bassi</li>
+  {% if incomplete %}<li><b class="flag">{{ incomplete }}</b> analisi con controlli non completati</li>{% endif %}
+</ul>
+
+<section class="panel heat-panel" aria-label="Heatmap delle macchine per area">
+<div class="wrap">
+<table class="heat">
+  <thead><tr>
+    <th class="sys">Macchina</th><th class="trend">Andamento</th><th class="score">Rischio</th>
+    {% for key, name, desc in HEATMAP_AREAS %}<th class="area" title="{{ name }}: {{ desc }}">{{ AREA_HEAD[key] }}</th>{% endfor %}
+    <th class="go"><span class="sr">Azioni</span></th>
+  </tr></thead>
+  <tbody>
+  {% for r in rows %}
+  {% set t = r.target %}{% set x = r.scan %}
+  <tr>
+    <th class="sys" scope="row">
+      <a class="name" href="/targets/{{ t.id }}">{{ t.name }}</a>
+      <span class="meta">{% if x %}{{ x.system_label or t.host }}{% else %}{{ t.host }}{% endif %}</span>
+      {% if t.tags %}<span class="tags">{{ m.tags(t.tags) }}</span>{% endif %}
+      {% if x and x.incomplete %}<span class="flag small">{{ x.incomplete }} {{ "controllo non completato" if x.incomplete == 1 else "controlli non completati" }}</span>{% endif %}
+      {% if r.active %}<a class="small live" href="/scans/{{ r.active.id }}"><span class="state state-{{ r.active.status }}">{{ STATUS_LABEL[r.active.status] }}{% if r.active.status == 'running' %} {{ r.active.progress }}%{% endif %}</span></a>{% endif %}
+    </th>
+    <td class="trend">{% if r.history|length >= 2 %}{{ sparkline(r.history) }}{% elif x %}<span class="muted small">una scansione</span>{% endif %}</td>
+    {% if x %}
+    <td class="score"><a class="scorebox lv-{{ x.risk_level }}" href="/scans/{{ x.id }}" data-tip="{{ x.risk_score }}/100|Rischio {{ SEVERITY_LABEL.get(x.risk_level, x.risk_level)|lower }}|Scansione del {{ x.finished_at|dt(true) }}"><b>{{ x.risk_score }}</b><span>{{ SEVERITY_LABEL.get(x.risk_level, x.risk_level) }}</span></a></td>
+    {% set bd = breakdowns.get(x.id, {}) %}
+    {% for key, name, desc in HEATMAP_AREAS %}
+      {% set c = x.areas.get(key) %}
+      {% if c %}<td class="cell"><a class="hc lv-{{ c.worst }}" href="/scans/{{ x.id }}?area={{ key }}#risultati" data-tip="{{ c.count }} {{ 'problema' if c.count == 1 else 'problemi' }}|{{ name }}|{{ m.cell_tip(name, bd.get(key, {})) }}" aria-label="{{ name }}: {{ c.count }} problemi, il peggiore {{ SEVERITY_LABEL[c.worst]|lower }}">{{ c.count }}</a></td>
+      {% else %}<td class="cell"><span class="hc lv-NONE" data-tip="0|{{ name }}|nessun problema trovato" tabindex="0" aria-label="{{ name }}: nessun problema trovato">0</span></td>{% endif %}
+    {% endfor %}
+    {% else %}
+    <td class="score"><span class="scorebox blank"><span>mai analizzata</span></span></td>
+    {% for a in HEATMAP_AREAS %}<td class="cell"><span class="hc blank"></span></td>{% endfor %}
+    {% endif %}
+    <td class="go">{% if r.can_scan and not r.active %}<a class="btn quiet small" href="/scans/new?target={{ t.id }}">Analizza</a>{% endif %}</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+<div class="legend">
+  <span><i class="lv-NONE"></i>nessun problema</span>
+  <span><i class="lv-LOW"></i>basso</span><span><i class="lv-MEDIUM"></i>medio</span>
+  <span><i class="lv-HIGH"></i>alto</span><span><i class="lv-CRITICAL"></i>critico</span>
+  <span><i class="blank"></i>mai analizzata</span>
+  <span class="legend-line"><svg width="22" height="10" aria-hidden="true"><line class="c-line" x1="1" y1="8" x2="21" y2="2"/></svg>rischio nelle ultime scansioni</span>
+</div>
+<p class="small muted mt-s">«Nessun problema» vale solo per i controlli eseguiti: se una riga segnala controlli non completati, apri la scansione per vedere quali.</p>
+</section>
+{% endif %}
+
+<div data-queue="{{ (recent[0].id if recent else 0) }}|{% for x in active %}{{ x.id }}{{ x.status }}{% if not loop.last %},{% endif %}{% endfor %}">
+{% if active %}
+<h2>In corso e in coda</h2>
+<div class="wrap"><table class="list">
+  <thead><tr><th>N.</th><th>Macchina</th><th>Stato</th><th>Passo</th><th class="w30">Avanzamento</th></tr></thead>
+  <tbody>
+  {% for x in active %}
+  <tr data-scan="{{ x.id }}">
+    <td class="num"><a href="/scans/{{ x.id }}">#{{ x.id }}</a></td><td>{{ x.target.name }}</td>
+    <td>{{ m.state(x) }}</td><td data-step>{{ x.current_step }}</td>
+    <td><progress class="bar" data-bar max="100" value="{{ x.progress }}">{{ x.progress }}%</progress></td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% endif %}
+</div>
+
+{% if recent %}
+<h2>Ultime scansioni</h2>
+<div class="wrap"><table class="list">
+  <thead><tr><th>N.</th><th>Macchina</th><th>Stato</th><th>Tipo</th><th>Esito</th><th>Richiesta</th><th class="r">Durata</th></tr></thead>
+  <tbody>{{ m.scan_rows(recent) }}</tbody>
+</table></div>
+<p><a href="/scans">Tutte le scansioni</a></p>
+{% endif %}
+{% endblock %}

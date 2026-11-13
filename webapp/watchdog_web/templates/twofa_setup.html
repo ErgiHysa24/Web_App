@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Verifica in due passaggi{% endblock %}
+{% block content %}
+<h1>Attiva la verifica in due passaggi</h1>
+<p class="lead">{% if required %}Per il tuo ruolo è obbligatoria: serve a proteggere l'accesso anche se qualcuno scopre la tua password.{% else %}Oltre alla password, all'accesso servirà un codice che cambia ogni 30 secondi.{% endif %}</p>
+{% if error %}<div class="note error" role="alert"><p>{{ error }}</p></div>{% endif %}
+<div class="setup">
+  <ol class="steps">
+    <li>Installa sul telefono un'app di autenticazione: Google Authenticator, Microsoft Authenticator, Aegis o FreeOTP.</li>
+    <li>Nell'app scegli «Aggiungi» e inquadra questo codice QR.
+      <img class="qr" src="{{ qr }}" alt="Codice QR per l'app di autenticazione" width="245" height="245">
+      Se non puoi inquadrarlo, inserisci a mano questa chiave:<br><span class="token">{{ secret }}</span></li>
+    <li>Scrivi qui il codice di 6 cifre che compare nell'app.
+      <form method="post" action="/account/2fa/enable" class="filters">
+        <input type="hidden" name="csrf" value="{{ csrf }}">
+        <input type="text" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="7" required aria-label="Codice dell'app" class="w12" autofocus>
+        <button class="btn" type="submit">Attiva</button>
+      </form>
+    </li>
+  </ol>
+</div>
+<p class="small muted">Questa chiave cambia ogni volta che ricarichi la pagina: usa quella mostrata adesso.</p>
+{% endblock %}

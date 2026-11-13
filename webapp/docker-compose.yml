@@ -1,0 +1,130 @@
+# WatchDog Web: proxy HTTPS, applicazione web, worker delle scansioni e database.
+#   python3 setup_env.py                (Windows: python setup_env.py)  crea o completa il file .env
+#   docker compose up -d --build                                 costruisce e avvia
+#   docker compose exec web watchdog-web create-admin            crea l'amministratore
+#
+# Isolamento:
+#   - dall'esterno si raggiunge solo il proxy (HTTPS); web e database non hanno porte aperte
+#   - "backend" ed "edge" sono reti interne: web e database non possono collegarsi a Internet
+#   - solo il worker esce, verso i sistemi da analizzare (rete "egress")
+#   - container in sola lettura, senza privilegi Linux, con limiti di memoria e processi
+name: watchdog
+
+x-hardening: &hardening
+  restart: unless-stopped
+  init: true
+  read_only: true
+  cap_drop: [ALL]
+  security_opt:
+    - no-new-privileges:true
+  pids_limit: 256
+  tmpfs:
+    - /tmp:size=64m,mode=1777
+
+x-app: &app
+  <<: *hardening
+  build:
+    context: ..
+    dockerfile: webapp/Dockerfile
+  image: watchdog-web:local
+  environment:
+    WATCHDOG_SECRET_KEY: ${WATCHDOG_SECRET_KEY:?manca WATCHDOG_SECRET_KEY nel file .env - esegui setup_env.py}
+    WATCHDOG_DATABASE_URL: postgresql+psycopg://watchdog:${POSTGRES_PASSWORD:?manca POSTGRES_PASSWORD nel file .env - esegui setup_env.py}@db:5432/watchdog
+    WATCHDOG_WORKER_CONCURRENCY: ${WATCHDOG_WORKER_CONCURRENCY:-2}
+    WATCHDOG_HTTPS_ONLY: "1"
+    WATCHDOG_TIMEZONE: ${WATCHDOG_TIMEZONE:-Europe/Rome}
+    WATCHDOG_ALLOWED_NETWORKS: ${WATCHDOG_ALLOWED_NETWORKS:-10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,fc00::/7}
+    WATCHDOG_REQUIRE_2FA: ${WATCHDOG_REQUIRE_2FA:-all}
+    WATCHDOG_REGISTRATION: ${WATCHDOG_REGISTRATION:-approval}
+    WATCHDOG_IDLE_MINUTES: ${WATCHDOG_IDLE_MINUTES:-30}
+    # Le richieste arrivano solo dal proxy (web non ha porte aperte): uvicorn può fidarsi
+    # dell'indirizzo del client che il proxy gli passa.
+    FORWARDED_ALLOW_IPS: "*"
+  volumes:
+    - reports:/data/reports
+  depends_on:
+    db:
+      condition: service_healthy
+
+services:
+  proxy:
+    <<: *hardening
+    image: caddy:2.10-alpine
+    cap_add: [NET_BIND_SERVICE]
+    ports:
+      - "${WATCHDOG_HTTPS_PORT:-8443}:443"
+      - "${WATCHDOG_HTTP_PORT:-8080}:80"
+    environment:
+      WATCHDOG_SERVER_NAMES: ${WATCHDOG_SERVER_NAMES:-localhost, 127.0.0.1}
+      WATCHDOG_DEFAULT_SNI: ${WATCHDOG_DEFAULT_SNI:-localhost}
+      WATCHDOG_HTTPS_PORT: ${WATCHDOG_HTTPS_PORT:-8443}
+    volumes:
+      - ./proxy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks: [public, edge]
+    mem_limit: 256m
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 443"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      web:
+        condition: service_healthy
+
+  web:
+    <<: *app
+    networks: [edge, backend]
+    mem_limit: 512m
+
+  worker:
+    <<: *app
+    command: ["python", "-m", "watchdog_web.worker"]
+    networks: [backend, egress]
+    mem_limit: 1g
+    healthcheck:
+      test: ["CMD", "python", "-c", "from watchdog_web.config import load_settings; from watchdog_web.db import make_engine; make_engine(load_settings().database_url).connect().close()"]
+      interval: 30s
+      timeout: 10s
+      start_period: 20s
+      retries: 3
+    # Allo spegnimento il worker annulla le scansioni in corso e rimuove i tool installati.
+    stop_grace_period: 40s
+
+  db:
+    <<: *hardening
+    image: postgres:16-alpine
+    # Il minimo che serve all'avvio di PostgreSQL (cambio di utente e permessi della cartella dati).
+    cap_add: [CHOWN, DAC_OVERRIDE, FOWNER, SETGID, SETUID]
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+      - /var/run/postgresql:size=8m,mode=1777
+    environment:
+      POSTGRES_USER: watchdog
+      POSTGRES_DB: watchdog
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?manca POSTGRES_PASSWORD nel file .env - esegui setup_env.py}
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+    networks: [backend]
+    mem_limit: 1g
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U watchdog -d watchdog"]
+      interval: 5s
+      timeout: 4s
+      retries: 20
+
+networks:
+  public: {}
+  egress: {}
+  edge:
+    internal: true
+  backend:
+    internal: true
+
+volumes:
+  dbdata:
+  reports:
+  caddy_data:
+  caddy_config:

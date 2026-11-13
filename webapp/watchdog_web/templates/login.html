@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Accedi{% endblock %}
+{% block bare %}
+<div class="login">
+  <div class="panel-side">
+    <h1>WatchDog</h1>
+    <p>Analizza la sicurezza dei sistemi del laboratorio via SSH e tiene lo storico dei risultati.</p>
+  </div>
+  <div class="form">
+    <h2>Accedi</h2>
+    {% if first_run %}
+    <div class="note warn"><p>Non esiste ancora nessun utente. Crea l'amministratore sul Raspberry con:</p>
+    <pre>docker compose exec web watchdog-web create-admin</pre></div>
+    {% endif %}
+    {% if flash %}<div class="note {{ flash[0] }}" role="status"><p>{{ flash[1] }}</p></div>{% endif %}
+    {% if error %}<div class="note error" role="alert"><p>{{ error }}</p></div>{% endif %}
+    <form method="post" action="/login">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <label for="username">Nome utente</label>
+      <input type="text" id="username" name="username" value="{{ username }}" autocomplete="username" autocapitalize="none" required autofocus>
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" autocomplete="current-password" required>
+      <p class="mt"><button class="btn" type="submit">Accedi</button></p>
+    </form>
+    {% if registration_open %}<p class="mt">Non hai un account? <a href="/register">Registrati</a></p>{% endif %}
+  </div>
+</div>
+{% endblock %}

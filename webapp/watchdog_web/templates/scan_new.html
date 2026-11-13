@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Nuova scansione{% endblock %}
+{% block content %}
+<h1>Nuova scansione</h1>
+<p class="lead">Scegli cosa analizzare e quanto a fondo. La scansione va in coda e parte appena c'è un posto libero.</p>
+{% if error %}<div class="note error" role="alert"><p>{{ error }}</p></div>{% endif %}
+{% if not targets %}
+<div class="empty"><p>Prima serve almeno una macchina che puoi analizzare.</p><p><a class="btn" href="/targets/new">Aggiungi macchina</a></p></div>
+{% else %}
+<form method="post">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <fieldset>
+    <legend>Macchine</legend>
+    <div class="cols">
+    {% for t in targets %}
+    <label class="check"><input type="checkbox" class="t" name="targets" value="{{ t.id }}" data-tags=" {{ (t.tags or [])|join(' ') }} " {% if t.id in selected %}checked{% endif %}> <span>{{ t.name }} <span class="hint mono">{{ t.host }}</span>{% if t.tags %} <span class="tags">{% for tg in t.tags %}<span class="tag">{{ tg }}</span>{% endfor %}</span>{% endif %}</span></label>
+    {% endfor %}
+    </div>
+    <p class="mt-s actions">
+      {% if targets|length > 3 %}<button type="button" class="btn quiet small" data-check-all="input.t">Tutte o nessuna</button>{% endif %}
+      {% for tg in tags %}<button type="button" class="btn quiet small" data-check-all='input.t[data-tags*=" {{ tg }} "]'>Seleziona «{{ tg }}»</button>{% endfor %}
+    </p>
+  </fieldset>
+
+  <fieldset>
+    <legend>Tipo di scansione</legend>
+    {% for key, item in PRESETS.items() %}
+    <label class="check"><input type="radio" id="preset-{{ key }}" name="preset" value="{{ key }}" {% if loop.first %}checked{% endif %}> <span><b>{{ item[0] }}</b> <span class="hint">{{ item[1] }}</span></span></label>
+    {% endfor %}
+    <div class="only-custom">
+      <h3>Controlli nativi <span class="hint">Leggono la configurazione, non installano nulla.</span></h3>
+      <div class="cols">{% for c in native %}<label class="check"><input type="checkbox" name="tools" value="{{ c }}" checked> <span class="mono">{{ c }}</span></label>{% endfor %}</div>
+      <h3>Tool esterni <span class="hint">Installati sul sistema per la scansione e poi rimossi.</span></h3>
+      <div class="cols">{% for c in external %}<label class="check"><input type="checkbox" name="tools" value="{{ c }}"> <span><span class="mono">{{ c }}</span>{% if c in optional %} <span class="hint">{{ notes.get(c, '') }}</span>{% endif %}</span></label>{% endfor %}</div>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Opzioni</legend>
+    {% for key, label in OPTION_LABELS.items() %}
+    <label class="check"><input type="checkbox" name="{{ key }}" value="1"> {{ label }}</label>
+    {% endfor %}
+  </fieldset>
+  <p class="actions"><button class="btn" type="submit">Metti in coda</button> <a class="btn quiet" href="/scans">Annulla</a></p>
+</form>
+{% endif %}
+{% endblock %}

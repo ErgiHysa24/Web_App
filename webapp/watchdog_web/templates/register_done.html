@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Richiesta inviata{% endblock %}
+{% block bare %}
+<div class="login">
+  <div class="panel-side"><h1>WatchDog</h1></div>
+  <div class="form">
+    <h2>Richiesta inviata</h2>
+    <p>L'account «{{ username }}» è pronto, con la verifica in due passaggi attiva. Ora un amministratore deve approvarlo: quando lo farà potrai accedere con nome utente, password e codice dell'app.</p>
+    <p><a class="btn" href="/login">Vai all'accesso</a></p>
+  </div>
+</div>
+{% endblock %}

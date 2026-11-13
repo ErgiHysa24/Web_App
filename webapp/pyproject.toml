@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "watchdog-web"
+version = "0.1.0"
+description = "WatchDog Web: interfaccia web multiutente per WatchDog, con coda di scansioni e database"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn>=0.32",
+    "sqlalchemy>=2.0.36",
+    "psycopg[binary]>=3.2",
+    "jinja2>=3.1.4",
+    "python-multipart>=0.0.18",
+    "itsdangerous>=2.2",
+    "cryptography>=44",
+    "tzdata>=2024.1",
+    "segno>=1.6",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8", "httpx>=0.28"]
+
+[project.scripts]
+watchdog-web = "watchdog_web.manage:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["watchdog_web*"]
+
+[tool.setuptools.package-data]
+watchdog_web = ["templates/*.html", "static/*", "static/fonts/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["tests"]
+filterwarnings = ["ignore::DeprecationWarning"]

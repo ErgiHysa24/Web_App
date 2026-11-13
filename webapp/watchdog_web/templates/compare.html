@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block title %}Confronto #{{ old.id }} e #{{ new.id }}{% endblock %}
+{% block content %}
+<p class="m0 small muted"><a href="/targets/{{ new.target_id }}">{{ new.target.name }}</a></p>
+<h1>Cosa è cambiato</h1>
+<p class="lead">Dalla <a href="/scans/{{ old.id }}">scansione #{{ old.id }}</a> del {{ old.finished_at|dt }} alla <a href="/scans/{{ new.id }}">#{{ new.id }}</a> del {{ new.finished_at|dt }}.</p>
+<ul class="figures">
+  <li><b class="num">{{ old.risk_score }} → {{ new.risk_score }}</b> rischio su 100 ({{ '%+d'|format(diff.score_delta) }})</li>
+  <li><b class="num">{{ diff.new|length }}</b> nuovi problemi</li>
+  <li><b class="num">{{ diff.resolved|length }}</b> risolti</li>
+  <li><b class="num">{{ diff.persistent|length }}</b> ancora presenti</li>
+  {% if diff.not_rechecked %}<li><b class="num flag">{{ diff.not_rechecked|length }}</b> non ricontrollati</li>{% endif %}
+</ul>
+{% macro block(title, items, scan, empty, note='') %}
+<h2>{{ title }}</h2>
+{% if note %}<p class="muted">{{ note }}</p>{% endif %}
+{% if not items %}<p class="muted">{{ empty }}</p>{% else %}
+<table class="list"><tbody>
+{% for f in items %}<tr><td class="w-sev">{{ m.sev(f.severity) }}</td><td><a href="/scans/{{ scan.id }}?severity=ALL&amp;q={{ f.title|truncate(60, true, '')|urlencode }}#risultati">{{ f.title }}</a></td><td class="muted small">{{ AREA_SHORT.get(f.area, f.area) }}</td></tr>{% endfor %}
+</tbody></table>{% endif %}
+{% endmacro %}
+{{ block('Nuovi problemi', diff.new, new, 'Nessun problema nuovo.') }}
+{{ block('Risolti', diff.resolved, old, 'Nessun problema risolto.') }}
+{% if diff.not_rechecked %}{{ block('Non ricontrollati', diff.not_rechecked, old, '', 'Non compaiono più, ma il controllo che li aveva trovati non è stato rieseguito o non è arrivato in fondo: non si possono considerare risolti.') }}{% endif %}
+{{ block('Ancora presenti', diff.persistent, new, 'Nessuno.') }}
+{% endblock %}

@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Security Assessment Report — localhost</title>
+<style>
+:root {
+  --bg: #f5f6f8; --surface: #fff; --text: #1d2330; --muted: #5d6677; --border: #e2e5ea;
+  --accent: #2f5fd0; --code: #eef0f4; --pre-bg: #1f2430; --pre-text: #e8ebf2;
+  --c-CRITICAL: #b3261e; --c-HIGH: #c2570c; --c-MEDIUM: #a37400; --c-LOW: #1c6fb5; --c-INFO: #5d6677;
+  --b-CRITICAL: #fdeceb; --b-HIGH: #fff1e5; --b-MEDIUM: #fff7de; --b-LOW: #e8f2fb; --b-INFO: #eef0f4;
+  --shadow: 0 1px 3px rgba(20,30,50,.08);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #12151c; --surface: #1b2029; --text: #e7eaf0; --muted: #98a2b3; --border: #2b3240;
+    --accent: #7ea2ff; --code: #262d3a; --pre-bg: #0d1016; --pre-text: #dfe3ec;
+    --c-CRITICAL: #ff8a80; --c-HIGH: #ffa45c; --c-MEDIUM: #f2c84b; --c-LOW: #6db6ff; --c-INFO: #98a2b3;
+    --b-CRITICAL: #3a1d1b; --b-HIGH: #3a2616; --b-MEDIUM: #382f12; --b-LOW: #17293a; --b-INFO: #232a36;
+    --shadow: none;
+  }
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--bg); color: var(--text); line-height: 1.55;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+.wrap { max-width: 1000px; margin: 0 auto; padding: 0 1.25rem; }
+code { background: var(--code); padding: 1px 6px; border-radius: 4px; font-size: .9em;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; overflow-wrap: anywhere; }
+h1 { margin: .15rem 0 1rem; font-size: clamp(1.6rem, 4vw, 2.2rem); }
+h2 { margin: 0 0 .5rem; font-size: 1.3rem; }
+h4 { margin: 1rem 0 .25rem; font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+section { margin: 2.25rem 0; }
+.lead, .muted { color: var(--muted); }
+.lead { margin: 0 0 1rem; }
+.muted { font-size: .92rem; }
+.top { background: linear-gradient(135deg, #1b2a4a, #2f5fd0); color: #fff; padding: 2rem 0 1.5rem; }
+.brand { margin: 0; font-size: .85rem; letter-spacing: .12em; text-transform: uppercase; opacity: .85; }
+.meta { display: flex; flex-wrap: wrap; gap: .75rem 2rem; margin: 0; }
+.meta div { min-width: 7rem; }
+.meta dt { font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; opacity: .75; }
+.meta dd { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+.top code { background: rgba(255,255,255,.18); color: #fff; }
+
+.toc { position: sticky; top: 0; z-index: 10; background: var(--surface); border-bottom: 1px solid var(--border); }
+.toc .wrap { display: flex; gap: .25rem; overflow-x: auto; }
+.toc a { padding: .6rem .8rem; color: var(--muted); text-decoration: none; font-size: .88rem; white-space: nowrap; border-bottom: 2px solid transparent; }
+.toc a:hover, .toc a.on { color: var(--accent); border-bottom-color: var(--accent); }
+h2, .area-panel, .finding { scroll-margin-top: 3.5rem; }
+.hero { display: flex; gap: 1.75rem; align-items: center; background: var(--surface);
+  border: 1px solid var(--border); border-left: 6px solid var(--lvl, var(--c-LOW));
+  border-radius: 12px; padding: 1.5rem; margin-top: 1.25rem; box-shadow: var(--shadow); position: relative; }
+.lvl-CRITICAL { --lvl: var(--c-CRITICAL); } .lvl-HIGH { --lvl: var(--c-HIGH); }
+.lvl-MEDIUM { --lvl: var(--c-MEDIUM); } .lvl-LOW { --lvl: var(--c-LOW); }
+.gauge { position: relative; width: 150px; height: 150px; flex: none; }
+.g-track { stroke: var(--border); } .g-val { stroke: var(--lvl); }
+.g-text { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.g-score { font-size: 2.6rem; font-weight: 800; line-height: 1; color: var(--lvl); }
+.g-max { font-size: .8rem; color: var(--muted); }
+.hero-level { margin: .25rem 0; font-size: 1.1rem; }
+.lvl-badge { display: inline-block; padding: .1rem .7rem; border-radius: 999px; font-weight: 800;
+  letter-spacing: .04em; background: var(--lvl); color: var(--surface); }
+.hero-text { margin: .4rem 0; font-size: 1.05rem; }
+.hero-note { margin: .6rem 0 0; font-size: .85rem; color: var(--muted); }
+
+.bar { display: flex; height: 16px; border-radius: 999px; overflow: hidden; background: var(--border); gap: 2px; }
+.seg { min-width: 6px; }
+.seg.sev-CRITICAL, .pill.sev-CRITICAL, .card.sev-CRITICAL::before { background: var(--c-CRITICAL); }
+.seg.sev-HIGH, .pill.sev-HIGH, .card.sev-HIGH::before { background: var(--c-HIGH); }
+.seg.sev-MEDIUM, .pill.sev-MEDIUM, .card.sev-MEDIUM::before { background: var(--c-MEDIUM); }
+.seg.sev-LOW, .pill.sev-LOW, .card.sev-LOW::before { background: var(--c-LOW); }
+.seg.sev-INFO, .pill.sev-INFO, .card.sev-INFO::before { background: var(--c-INFO); }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: .75rem; margin-top: 1rem; }
+.card { position: relative; text-align: left; font: inherit; color: inherit; cursor: pointer;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+  padding: .8rem .9rem .8rem 1.1rem; box-shadow: var(--shadow); overflow: hidden; }
+.card::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; }
+.card[disabled] { opacity: .55; cursor: default; }
+.card[aria-pressed="true"] { outline: 2px solid var(--accent); }
+.card-n { display: block; font-size: 1.8rem; font-weight: 800; line-height: 1.1; }
+.card-l { display: block; font-weight: 700; }
+.card-m { display: block; font-size: .8rem; color: var(--muted); margin-top: .2rem; }
+
+.pill { display: inline-block; padding: .08rem .55rem; border-radius: 999px; color: #fff;
+  font-size: .72rem; font-weight: 700; letter-spacing: .03em; vertical-align: middle; white-space: nowrap; }
+.rmatrix, .rtop { border-collapse: collapse; width: 100%; margin: 8px 0 12px; font-size: .92rem; }
+.rscroll { overflow-x: auto; max-width: 100%; }
+.rmatrix th, .rmatrix td, .rtop th, .rtop td { border: 1px solid var(--border, #d9dde5); padding: 8px 10px; text-align: left; }
+.rmatrix td.rm { text-align: center; min-width: 90px; }
+.rmatrix td.rm strong { display: block; font-size: 1.3rem; }
+.rmatrix td.rm span { font-size: .75rem; opacity: .8; }
+.rmatrix td.rm.zero { opacity: .35; }
+.rmatrix td.sev-CRITICAL { background: var(--b-CRITICAL); } .rmatrix td.sev-HIGH { background: var(--b-HIGH); }
+.rmatrix td.sev-MEDIUM { background: var(--b-MEDIUM); } .rmatrix td.sev-LOW { background: var(--b-LOW); }
+.rlevels { list-style: none; display: flex; gap: 14px; flex-wrap: wrap; padding: 0; margin: 4px 0 12px; }
+.rtop-h { margin: 14px 0 4px; font-size: 1rem; }
+.pill.sev-MEDIUM { color: #1d2330; } .pill.verify { background: var(--b-MEDIUM); color: var(--c-MEDIUM); border: 1px solid var(--c-MEDIUM); }
+@media (prefers-color-scheme: dark) { .pill { color: #10131a; } }
+
+.cmp-score { font-size: 1.05rem; margin: 0 0 .8rem; }
+.delta { font-weight: 700; padding: .05rem .5rem; border-radius: 999px; background: var(--code); }
+.delta.up { color: var(--c-CRITICAL); } .delta.down { color: #1a7f37; } .delta.eq { color: var(--muted); }
+@media (prefers-color-scheme: dark) { .delta.down { color: #5fd47f; } }
+.cmp { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; }
+.cmp-col { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: .6rem .9rem; }
+.cmp-col h4 { margin-top: .3rem; } .cmp-col ul { list-style: none; margin: 0; padding: 0; display: grid; gap: .4rem; }
+.struck { text-decoration: line-through; color: var(--muted); }
+.pill.new { background: var(--accent); color: #fff; }
+.cmd .evidence { margin-bottom: .4rem; } .copy { padding: .3rem .7rem; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); font: inherit; font-size: .85rem; cursor: pointer; }
+.cats li[data-cat].clickable { cursor: pointer; } .cats li[data-cat].clickable:hover .cat-name { color: var(--accent); text-decoration: underline; }
+.tools select { padding: .5rem .6rem; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); font: inherit; }
+.prio { margin: 0; padding-left: 1.4rem; display: grid; gap: .8rem; }
+.prio li { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: .7rem .9rem; box-shadow: var(--shadow); }
+.cats { list-style: none; margin: 0; padding: 0; display: grid; gap: .5rem; }
+.cats li { display: grid; grid-template-columns: minmax(7rem, 12rem) 1fr 2.5rem; gap: .75rem; align-items: center; }
+.cat-bar { height: 10px; background: var(--border); border-radius: 999px; overflow: hidden; }
+.cat-bar span { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
+.cat-n { text-align: right; font-weight: 700; }
+.checks { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: .6rem; }
+.checks li { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: .6rem .8rem; }
+.checks strong { display: block; } .checks span { color: var(--muted); font-size: .88rem; display: block; }
+.checks span.t { font-size: .78rem; margin-top: .2rem; font-variant-numeric: tabular-nums; }
+.notice { border: 1px solid var(--border); border-radius: 10px; padding: .8rem 1rem; margin-top: 1rem; }
+.notice.warn { background: var(--b-MEDIUM); border-color: var(--c-MEDIUM); }
+.notice p { margin: .3rem 0; } .notice ul { margin: .3rem 0 0; padding-left: 1.2rem; }
+
+.tools { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin-bottom: 1rem; }
+.tools[hidden], [hidden] { display: none !important; }
+.tools input { flex: 1 1 14rem; padding: .5rem .75rem; border: 1px solid var(--border); border-radius: 8px;
+  background: var(--surface); color: var(--text); font: inherit; }
+.tools button { padding: .45rem .8rem; border: 1px solid var(--border); border-radius: 8px;
+  background: var(--surface); color: var(--text); font: inherit; cursor: pointer; }
+.tools button:hover, .card:not([disabled]):hover { border-color: var(--accent); }
+.group h3 { margin: 1.5rem 0 .6rem; font-size: 1rem; color: var(--c-INFO); display: flex; gap: .5rem; align-items: center; }
+.group h3.sev-CRITICAL { color: var(--c-CRITICAL); } .group h3.sev-HIGH { color: var(--c-HIGH); }
+.group h3.sev-MEDIUM { color: var(--c-MEDIUM); } .group h3.sev-LOW { color: var(--c-LOW); }
+.g-count { background: var(--code); color: var(--text); border-radius: 999px; padding: 0 .55rem; font-size: .8rem; }
+.finding { background: var(--surface); border: 1px solid var(--border); border-left: 5px solid var(--c-INFO);
+  border-radius: 10px; margin: .6rem 0; box-shadow: var(--shadow); }
+.finding.sev-CRITICAL { border-left-color: var(--c-CRITICAL); } .finding.sev-HIGH { border-left-color: var(--c-HIGH); }
+.finding.sev-MEDIUM { border-left-color: var(--c-MEDIUM); } .finding.sev-LOW { border-left-color: var(--c-LOW); }
+.finding summary { cursor: pointer; padding: .75rem 1rem; display: flex; flex-wrap: wrap; gap: .5rem .75rem; align-items: center; list-style: none; }
+.finding summary::-webkit-details-marker { display: none; }
+.finding summary::before { content: "▸"; color: var(--muted); transition: transform .15s; }
+.finding[open] summary::before { transform: rotate(90deg); }
+.f-title { font-weight: 600; flex: 1 1 18rem; overflow-wrap: anywhere; }
+.f-cat { color: var(--muted); font-size: .82rem; }
+.f-body { padding: 0 1rem 1rem 2.1rem; }
+.f-body p { margin: .2rem 0; overflow-wrap: anywhere; }
+.evidence { background: var(--pre-bg); color: var(--pre-text); padding: .75rem; border-radius: 8px;
+  overflow-x: auto; font-size: .82rem; margin: .3rem 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.reco { background: var(--b-LOW); border-left: 4px solid var(--c-LOW); border-radius: 6px; padding: .1rem .9rem .5rem; margin-top: .8rem; }
+.num { text-align: center; }
+.f-meta.refs { margin-top: .3rem !important; }
+.f-meta { margin-top: .8rem !important; color: var(--muted); font-size: .85rem; }
+.empty { padding: 1.5rem; text-align: center; color: var(--muted); background: var(--surface); border: 1px dashed var(--border); border-radius: 10px; }
+.guide { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; }
+.guide ul { margin: 0; padding-left: 1.1rem; display: grid; gap: .35rem; list-style: none; padding: 0; }
+footer { padding: 1rem 1.25rem 3rem; font-size: .9rem; border-top: 1px solid var(--border); margin-top: 2rem; }
+footer p { margin: .3rem 0; }
+
+.heat { border-collapse: separate; border-spacing: 3px; width: 100%; font-size: .92rem; }
+.heat th { text-align: left; font-weight: 600; padding: 6px 8px; white-space: nowrap; }
+.heat thead th { font-size: .8rem; color: var(--muted); text-align: center; }
+.heat thead th:first-child { text-align: left; }
+.heat td { text-align: center; padding: 10px 6px; border-radius: 6px; min-width: 56px; font-weight: 700; }
+.heat td.hm { background: var(--b-INFO); }
+.heat td.hm.sev-CRITICAL { background: var(--b-CRITICAL); background: color-mix(in srgb, var(--c-CRITICAL) var(--hm), var(--surface)); }
+.heat td.hm.sev-HIGH { background: var(--b-HIGH); background: color-mix(in srgb, var(--c-HIGH) var(--hm), var(--surface)); }
+.heat td.hm.sev-MEDIUM { background: var(--b-MEDIUM); background: color-mix(in srgb, var(--c-MEDIUM) var(--hm), var(--surface)); }
+.heat td.hm.sev-LOW { background: var(--b-LOW); background: color-mix(in srgb, var(--c-LOW) var(--hm), var(--surface)); }
+.heat td.hm.sev-INFO { background: color-mix(in srgb, var(--c-INFO) calc(var(--hm) * .5), var(--surface)); }
+.heat td.hm.hot { color: #fff; }
+@media (prefers-color-scheme: dark) { .heat td.hm.hot { color: #10131a; } }
+.heat td.hm.zero { background: var(--surface); color: var(--border); font-weight: 400; border: 1px dashed var(--border); }
+.heat td.hm-tot { background: var(--code); }
+.heat td.hm-risk { background: transparent; }
+.heat tbody tr[data-area] { cursor: pointer; }
+.heat tbody tr[data-area]:hover th a, .heat tbody tr.on th a { color: var(--accent); text-decoration: underline; }
+.heat tbody tr.on td, .heat tbody tr.on th { outline: 2px solid var(--accent); outline-offset: -2px; }
+.area-link { color: var(--text); text-decoration: none; }
+.areas { display: grid; gap: .6rem; margin-top: 1rem; }
+.area-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow); }
+.area-panel > summary { cursor: pointer; padding: .7rem 1rem; display: flex; gap: .6rem; align-items: center; flex-wrap: wrap; }
+.area-panel[open] > summary { border-bottom: 1px solid var(--border); }
+.area-body { padding: .2rem 1rem 1rem; }
+.heat.inner th[scope="row"] { font-weight: 500; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: .5rem; }
+.tile { display: flex; flex-direction: column; gap: .3rem; padding: .55rem .7rem; border-radius: 8px; text-decoration: none;
+  color: var(--text); background: var(--b-INFO); border-left: 5px solid var(--c-INFO); }
+.tile:hover { outline: 2px solid var(--accent); }
+.tile.sev-CRITICAL { background: var(--b-CRITICAL); border-left-color: var(--c-CRITICAL); }
+.tile.sev-HIGH { background: var(--b-HIGH); border-left-color: var(--c-HIGH); }
+.tile.sev-MEDIUM { background: var(--b-MEDIUM); border-left-color: var(--c-MEDIUM); }
+.tile.sev-LOW { background: var(--b-LOW); border-left-color: var(--c-LOW); }
+.tile-h { display: flex; justify-content: space-between; align-items: center; gap: .4rem; }
+.tile-r { font-size: .75rem; color: var(--muted); }
+.tile-t { font-weight: 600; font-size: .88rem; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.tile-c { font-size: .75rem; color: var(--muted); }
+
+@media (max-width: 640px) {
+  .hero { flex-direction: column; text-align: center; }
+  .cats li { grid-template-columns: 1fr 2.5rem; } .cat-bar { grid-column: 1 / -1; grid-row: 2; }
+  .f-body { padding-left: 1rem; }
+}
+@media print {
+  body { background: #fff; color: #000; } .top { background: #fff; color: #000; border-bottom: 2px solid #000; }
+  .top code { background: #eee; color: #000; } .tools, .toc, .copy { display: none !important; }
+  .hero, .finding, .card, .checks li, .prio li, .tile { box-shadow: none; break-inside: avoid; }
+  .finding .f-body { display: block; }
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <p class="brand">WatchDog · Risk Assessor per Linux e macOS</p>
+    <h1>Security Assessment Report</h1>
+    <dl class="meta"><div><dt>Target</dt><dd><code>localhost</code></dd></div><div><dt>Sistema</dt><dd>Ubuntu 24.04.5 LTS · apt · container docker</dd></div><div><dt>Modalità</dt><dd><code>local</code></dd></div><div><dt>Data</dt><dd>13/11/2026 17:56 UTC</dd></div><div><dt>Durata</dt><dd>7 s</dd></div><div><dt>Finding</dt><dd>25</dd></div></dl>
+  </div>
+</header>
+<nav class="toc" aria-label="Sezioni del report"><div class="wrap"><a href="#sum-title">Riepilogo</a><a href="#dist-title">Distribuzione</a><a href="#heat-title">Heatmap</a><a href="#risk-title">Rischio</a><a href="#cat-title">Aree</a><a href="#comp-title">Norme</a><a href="#attack-title">ATT&CK</a><a href="#cov-title">Controlli</a><a href="#find-title">Finding</a><a href="#guide-title">Guida</a></div></nav>
+<main class="wrap">
+
+<section class="hero lvl-MEDIUM" aria-labelledby="sum-title">
+  <div class="gauge" role="img" aria-label="Punteggio di rischio 52 su 100">
+    <svg viewBox="0 0 120 120" width="150" height="150">
+      <circle class="g-track" cx="60" cy="60" r="52" fill="none" stroke-width="10"/>
+      <circle class="g-val" cx="60" cy="60" r="52" fill="none" stroke-width="10"
+              stroke-linecap="round" stroke-dasharray="169.9 326.7"
+              transform="rotate(-90 60 60)"/>
+    </svg>
+    <div class="g-text"><span class="g-score">52</span><span class="g-max">/ 100</span></div>
+  </div>
+  <div class="hero-body">
+    <h2 id="sum-title">Executive Summary</h2>
+    <p class="hero-level">Rischio complessivo <span class="lvl-badge">MEDIUM</span></p>
+    <p class="hero-text">Nessun problema grave, ma ci sono debolezze da pianificare.</p>
+    <p class="hero-note">Il livello corrisponde alla severità più alta tra i finding; il punteggio
+    (0–100) somma i punti di ciascuna severità con dei tetti, così molti problemi lievi non
+    nascondono quelli gravi.</p>
+  </div>
+</section>
+<section aria-labelledby="dist-title">
+  <h2 id="dist-title">Distribuzione dei finding</h2>
+  <div class="bar" role="img" aria-label="Distribuzione per severità, 25 finding in totale"><span class="seg sev-MEDIUM" style="flex:7" title="Medio: 7"></span><span class="seg sev-LOW" style="flex:5" title="Basso: 5"></span><span class="seg sev-INFO" style="flex:13" title="Info: 13"></span></div>
+  <div class="cards"><button type="button" class="card sev-CRITICAL" data-filter="CRITICAL" disabled aria-pressed="false"><span class="card-n">0</span><span class="card-l">Critici</span><span class="card-m">Problemi gravi: intervenire subito.</span></button><button type="button" class="card sev-HIGH" data-filter="HIGH" disabled aria-pressed="false"><span class="card-n">0</span><span class="card-l">Alti</span><span class="card-m">Problemi importanti: risolvere a breve.</span></button><button type="button" class="card sev-MEDIUM" data-filter="MEDIUM"  aria-pressed="false"><span class="card-n">7</span><span class="card-l">Medi</span><span class="card-m">Debolezze da pianificare.</span></button><button type="button" class="card sev-LOW" data-filter="LOW"  aria-pressed="false"><span class="card-n">5</span><span class="card-l">Bassi</span><span class="card-m">Miglioramenti consigliati, impatto limitato.</span></button><button type="button" class="card sev-INFO" data-filter="INFO"  aria-pressed="false"><span class="card-n">13</span><span class="card-l">Informativi</span><span class="card-m">Informazioni utili: non sono problemi.</span></button></div>
+</section>
+<section aria-labelledby="heat-title">
+  <h2 id="heat-title">Heatmap delle aree</h2>
+  <p class="lead">Quanti finding ci sono in ogni macro-area per livello di gravità: più il colore è intenso,
+  più sono numerosi. Clicca un'area per aprire la sua heatmap interna, controllo per controllo, con tutti i finding.</p>
+  <div class="rscroll"><table class="heat">
+    <thead><tr><th scope="col">Area</th><th scope="col"><span class="pill sev-CRITICAL">Critico</span></th><th scope="col"><span class="pill sev-HIGH">Alto</span></th><th scope="col"><span class="pill sev-MEDIUM">Medio</span></th><th scope="col"><span class="pill sev-LOW">Basso</span></th><th scope="col"><span class="pill sev-INFO">Info</span></th><th scope="col">Totale</th><th scope="col">Rischio max</th></tr></thead>
+    <tbody><tr data-area="access"><th scope="row"><a class="area-link" href="#area-access" data-area="access">Accessi e privilegi</a></th><td class="hm zero">·</td><td class="hm zero">·</td><td class="hm sev-MEDIUM hot" style="--hm:90%" title="3 medi">3</td><td class="hm sev-LOW" style="--hm:47%" title="1 bassi">1</td><td class="hm sev-INFO hot" style="--hm:90%" title="4 informativi">4</td><td class="hm-tot">8</td><td class="hm-risk"><span class="pill sev-MEDIUM">6</span></td></tr><tr data-area="network"><th scope="row"><a class="area-link" href="#area-network" data-area="network">Rete ed esposizione</a></th><td class="hm zero">·</td><td class="hm zero">·</td><td class="hm sev-MEDIUM" style="--hm:47%" title="1 medi">1</td><td class="hm sev-LOW hot" style="--hm:68%" title="2 bassi">2</td><td class="hm sev-INFO hot" style="--hm:90%" title="3 informativi">3</td><td class="hm-tot">6</td><td class="hm-risk"><span class="pill sev-MEDIUM">4</span></td></tr><tr data-area="vulns"><th scope="row"><a class="area-link" href="#area-vulns" data-area="vulns">Vulnerabilità e aggiornamenti</a></th><td class="hm zero">·</td><td class="hm zero">·</td><td class="hm sev-MEDIUM hot" style="--hm:68%" title="2 medi">2</td><td class="hm zero">·</td><td class="hm sev-INFO hot" style="--hm:90%" title="1 informativi">1</td><td class="hm-tot">3</td><td class="hm-risk"><span class="pill sev-MEDIUM">6</span></td></tr><tr data-area="hardening"><th scope="row"><a class="area-link" href="#area-hardening" data-area="hardening">Hardening e conformità</a></th><td class="hm zero">·</td><td class="hm zero">·</td><td class="hm sev-MEDIUM" style="--hm:47%" title="1 medi">1</td><td class="hm sev-LOW hot" style="--hm:68%" title="2 bassi">2</td><td class="hm sev-INFO hot" style="--hm:90%" title="3 informativi">3</td><td class="hm-tot">6</td><td class="hm-risk"><span class="pill sev-MEDIUM">6</span></td></tr><tr data-area="logging"><th scope="row"><a class="area-link" href="#area-logging" data-area="logging">Log e monitoraggio</a></th><td class="hm zero">·</td><td class="hm zero">·</td><td class="hm zero">·</td><td class="hm zero">·</td><td class="hm sev-INFO hot" style="--hm:90%" title="1 informativi">1</td><td class="hm-tot">1</td><td class="hm-risk muted">–</td></tr><tr data-area="system"><th scope="row"><a class="area-link" href="#area-system" data-area="system">Sistema e svolgimento</a></th><td class="hm zero">·</td><td class="hm zero">·</td><td class="hm zero">·</td><td class="hm zero">·</td><td class="hm sev-INFO hot" style="--hm:90%" title="1 informativi">1</td><td class="hm-tot">1</td><td class="hm-risk muted">–</td></tr></tbody>
+  </table></div>
+  <div class="areas">
+<details class="area-panel" id="area-access">
+  <summary><strong>Accessi e privilegi</strong> <span class="g-count">8</span>
+    <span class="muted">4 problemi, 4 informativi</span></summary>
+  <div class="area-body">
+    <p class="muted">Utenti, amministratori, SSH, password policy e regole sudo.</p>
+    <div class="rscroll"><table class="heat inner">
+      <thead><tr><th scope="col">Controllo</th><th scope="col">Critico</th><th scope="col">Alto</th><th scope="col">Medio</th><th scope="col">Basso</th><th scope="col">Info</th><th scope="col">Totale</th></tr></thead>
+      <tbody><tr><th scope="row">Password policy e sudo</th><td class="hm zero">·</td><td class="hm zero">·</td><td class="hm sev-MEDIUM hot" style="--hm:90%" title="3 medi">3</td><td class="hm sev-LOW" style="--hm:47%" title="1 bassi">1</td><td class="hm zero">·</td><td class="hm-tot">4</td></tr><tr><th scope="row">Utenti e gruppi</th><td class="hm zero">·</td><td class="hm zero">·</td><td class="hm zero">·</td><td class="hm zero">·</td><td class="hm sev-INFO hot" style="--hm:90%" title="4 informativi">4</td><td class="hm-tot">4</td></tr></tbody>
+    </table></div>
+    <h4>Tutti i finding dell'area</h4>
+    <div class="tiles"><a class="tile sev-MEDIUM" href="#f-5" title="Nessun blocco dopo tentativi di accesso falliti"><span class="tile-h"><span class="pill sev-MEDIUM">Medio</span><span class="tile-r">rischio 4</span></span><span class="tile-t">Nessun blocco dopo tentativi di accesso falliti</span><span class="tile-c">Password policy e sudo</span></a><a class="tile sev-MEDIUM" href="#f-6" title="Nessun controllo sulla qualità delle password"><span class="tile-h"><span class="pill sev-MEDIUM">Medio</span><span class="tile-r">rischio 4</span></span><span class="tile-t">Nessun controllo sulla qualità delle password</span><span class="tile-c">Password policy e sudo</span></a><a class="tile sev-MEDIUM" href="#f-7" title="sudo senza password per qualsiasi comando: claude"><span class="tile-h"><span class="pill sev-MEDIUM">Medio</span><span class="tile-r">rischio 6</span></span><span class="tile-t">sudo senza password per qualsiasi comando: claude</span><span class="tile-c">Password policy e sudo</span></a><a class="tile sev-LOW" href="#f-12" title="Le password non hanno una scadenza ragionevole"><span class="tile-h"><span class="pill sev-LOW">Basso</span><span class="tile-r">rischio 2</span></span><span class="tile-t">Le password non hanno una scadenza ragionevole</span><span class="tile-c">Password policy e sudo</span></a><a class="tile sev-INFO" href="#f-14" title="Gruppo privilegiato sudo: ubuntu"><span class="tile-h"><span class="pill sev-INFO">Info</span><span class="tile-r">rischio 0</span></span><span class="tile-t">Gruppo privilegiato sudo: ubuntu</span><span class="tile-c">Utenti e gruppi</span></a><a class="tile sev-INFO" href="#f-23" title="Utente con shell di login: claude"><span class="tile-h"><span class="pill sev-INFO">Info</span><span class="tile-r">rischio 0</span></span><span class="tile-t">Utente con shell di login: claude</span><span class="tile-c">Utenti e gruppi</span></a><a class="tile sev-INFO" href="#f-24" title="Utente con shell di login: postgres"><span class="tile-h"><span class="pill sev-INFO">Info</span><span class="tile-r">rischio 0</span></span><span class="tile-t">Utente con shell di login: postgres</span><span class="tile-c">Utenti e gruppi</span></a><a class="tile sev-INFO" href="#f-25" title="Utente con shell di login: ubuntu"><span class="tile-h"><span class="pill sev-INFO">Info</span><span class="tile-r">rischio 0</span></span><span class="tile-t">Utente con shell di login: ubuntu</span><span class="tile-c">Utenti e gruppi</span></a></div>
+  </div>
+</details>
+<details class="area-panel" id="area-network">
+  <summary><strong>Rete ed esposizione</strong> <span class="g-count">6</span>
+    <span class="muted">3 problemi, 3 informativi</span></summary>
+  <div class="area-body">
+    <p class="muted">Firewall, porte e servizi in ascolto, scansioni Nmap.</p>
+    <div class="rscroll"><table class="heat inner">
+      <thead><tr><th scope="col">Controllo</th><th scope="col">Critico</th><th scope="col">Alto</th><th scope="col">Medio</th><th scope="col">Basso</th><th scope="col">Info</th><th scope="col">Totale</th></tr></thead>
+      <tbody><tr><th scope="row">Kernel</th><td class="hm zero">·</td><td class="hm zero">·</td><td class="hm sev-MEDIUM" style="--hm:58%" title="1 medi">1</td><td class="hm sev-LOW hot" style="--hm:90%" title="2 bassi">2</td><td class="hm zero">·</td><td class="hm-tot">3</td></tr><tr><th scope="row">Firewall</th><td class="hm zero">·</td><td class="hm zero">·</td><td class="hm zero">·</td><td class="hm zero">·</td><td class="hm sev-INFO hot" style="--hm:90%" title="1 informativi">1</td><td class="hm-tot">1</td></tr><tr><th scope="row">Servizi e porte</th><td class="hm zero">·</td><td class="hm zero">·</td><td class="hm zero">·</td><td class="hm zero">·</td><td class="hm sev-INFO hot" style="--hm:90%" title="2 informativi">2</td><td class="hm-tot">2</td></tr></tbody>
+    </table></div>
+    <h4>Tutti i finding dell'area</h4>
+    <div class="tiles"><a class="tile sev-MEDIUM" href="#f-1" title="Accetta i reindirizzamenti ICMP (net.ipv4.conf.all.accept_redirects=1)"><span class="tile-h"><span class="pill sev-MEDIUM">Medio</span><span class="tile-r">rischio 4</span></span><span class="tile-t">Accetta i reindirizzamenti ICMP (net.ipv4.conf.all.accept_redirects=1)</span><span class="tile-c">Kernel</span></a><a class="tile sev-LOW" href="#f-8" title="Controllo dell&#x27;indirizzo sorgente disattivato (net.ipv4.conf.all.rp_filter=0)"><span class="tile-h"><span class="pill sev-LOW">Basso</span><span class="tile-r">rischio 2</span></span><span class="tile-t">Controllo dell&#x27;indirizzo sorgente disattivato (net.ipv4.conf.all.rp_filter=0)</span><span class="tile-c">Kernel</span></a><a class="tile sev-LOW" href="#f-11" title="Invia reindirizzamenti ICMP (net.ipv4.conf.all.send_redirects=1)"><span class="tile-h"><span class="pill sev-LOW">Basso</span><span class="tile-r">rischio 2</span></span><span class="tile-t">Invia reindirizzamenti ICMP (net.ipv4.conf.all.send_redirects=1)</span><span class="tile-c">Kernel</span></a><a class="tile sev-INFO" href="#f-13" title="Firewall non verificabile dentro un container"><span class="tile-h"><span class="pill sev-INFO">Info</span><span class="tile-r">rischio 0</span></span><span class="tile-t">Firewall non verificabile dentro un container</span><span class="tile-c">Firewall</span></a><a class="tile sev-INFO" href="#f-18" title="Porte in ascolto non verificabili"><span class="tile-h"><span class="pill sev-INFO">Info</span><span class="tile-r">rischio 0</span></span><span class="tile-t">Porte in ascolto non verificabili</span><span class="tile-c">Servizi e porte</span></a><a class="tile sev-INFO" href="#f-22" title="Stato dei servizi non verificabile"><span class="tile-h"><span class="pill sev-INFO">Info</span><span class="tile-r">rischio 0</span></span><span class="tile-t">Stato dei servizi non verificabile</span><span class="tile-c">Servizi e porte</span></a></div>
+  </div>
+</details>
+<details class="area-panel" id="area-vulns">
+  <summary><strong>Vulnerabilità e aggiornamenti</strong> <span class="g-count">3</span>
+    <span class="muted">2 problemi, 1 informativo</span></summary>
+  <div class="area-body">
+    <p class="muted">CVE note nei pacchetti, aggiornamenti mancanti o non automatici.</p>
+    <div class="rscroll"><table class="heat inner">
+      <thead><tr><th scope="col">Controllo</th><th scope="col">Critico</th><th scope="col">Alto</th><th scope="col">Medio</th><th scope="col">Basso</th><th scope="col">Info</th><th scope="col">Totale</th></tr></thead>
+      <tbody><tr><th scope="row">Aggiornamenti</th><td class="hm zero">·</td><td class="hm zero">·</td><td class="hm sev-MEDIUM hot" style="--hm:90%" title="1 medi">1</td><td class="hm zero">·</td><td class="hm zero">·</td><td class="hm-tot">1</td></tr><tr><th scope="row">Pacchetti</th><td class="hm zero">·</td><td class="hm zero">·</td><td class="hm sev-MEDIUM hot" style="--hm:90%" title="1 medi">1</td><td class="hm zero">·</td><td class="hm sev-INFO hot" style="--hm:90%" title="1 informativi">1</td><td class="hm-tot">2</td></tr></tbody>
+    </table></div>
+    <h4>Tutti i finding dell'area</h4>
+    <div class="tiles"><a class="tile sev-MEDIUM" href="#f-2" title="Aggiornamenti di sicurezza automatici non attivi"><span class="tile-h"><span class="pill sev-MEDIUM">Medio</span><span class="tile-r">rischio 4</span></span><span class="tile-t">Aggiornamenti di sicurezza automatici non attivi</span><span class="tile-c">Aggiornamenti</span></a><a class="tile sev-MEDIUM" href="#f-3" title="Aggiornamenti disponibili: 53"><span class="tile-h"><span class="pill sev-MEDIUM">Medio</span><span class="tile-r">rischio 6</span></span><span class="tile-t">Aggiornamenti disponibili: 53</span><span class="tile-c">Pacchetti</span></a><a class="tile sev-INFO" href="#f-16" title="Pacchetti installati: 1037"><span class="tile-h"><span class="pill sev-INFO">Info</span><span class="tile-r">rischio 0</span></span><span class="tile-t">Pacchetti installati: 1037</span><span class="tile-c">Pacchetti</span></a></div>
+  </div>
+</details>
+<details class="area-panel" id="area-hardening">
+  <summary><strong>Hardening e conformità</strong> <span class="g-count">6</span>
+    <span class="muted">3 problemi, 3 informativi</span></summary>
+  <div class="area-body">
+    <p class="muted">Kernel, file system, SELinux/AppArmor, cifratura, audit Lynis e OpenSCAP.</p>
+    <div class="rscroll"><table class="heat inner">
+      <thead><tr><th scope="col">Controllo</th><th scope="col">Critico</th><th scope="col">Alto</th><th scope="col">Medio</th><th scope="col">Basso</th><th scope="col">Info</th><th scope="col">Totale</th></tr></thead>
+      <tbody><tr><th scope="row">File system</th><td class="hm zero">·</td><td class="hm zero">·</td><td class="hm sev-MEDIUM" style="--hm:58%" title="1 medi">1</td><td class="hm sev-LOW hot" style="--hm:90%" title="2 bassi">2</td><td class="hm sev-INFO hot" style="--hm:90%" title="1 informativi">1</td><td class="hm-tot">4</td></tr><tr><th scope="row">Kernel</th><td class="hm zero">·</td><td class="hm zero">·</td><td class="hm zero">·</td><td class="hm zero">·</td><td class="hm sev-INFO hot" style="--hm:90%" title="1 informativi">1</td><td class="hm-tot">1</td></tr><tr><th scope="row">Protezioni del sistema</th><td class="hm zero">·</td><td class="hm zero">·</td><td class="hm zero">·</td><td class="hm zero">·</td><td class="hm sev-INFO hot" style="--hm:90%" title="1 informativi">1</td><td class="hm-tot">1</td></tr></tbody>
+    </table></div>
+    <h4>Tutti i finding dell'area</h4>
+    <div class="tiles"><a class="tile sev-MEDIUM" href="#f-4" title="Disco quasi pieno: /opt/claude-code (93%)"><span class="tile-h"><span class="pill sev-MEDIUM">Medio</span><span class="tile-r">rischio 6</span></span><span class="tile-t">Disco quasi pieno: /opt/claude-code (93%)</span><span class="tile-c">File system</span></a><a class="tile sev-LOW" href="#f-9" title="File SGID trovati: 8"><span class="tile-h"><span class="pill sev-LOW">Basso</span><span class="tile-r">rischio 1</span></span><span class="tile-t">File SGID trovati: 8</span><span class="tile-c">File system</span></a><a class="tile sev-LOW" href="#f-10" title="File scrivibili da tutti nelle cartelle temporanee: 7"><span class="tile-h"><span class="pill sev-LOW">Basso</span><span class="tile-r">rischio 2</span></span><span class="tile-t">File scrivibili da tutti nelle cartelle temporanee: 7</span><span class="tile-c">File system</span></a><a class="tile sev-INFO" href="#f-17" title="Parametri del kernel dell&#x27;host non valutabili dal container"><span class="tile-h"><span class="pill sev-INFO">Info</span><span class="tile-r">rischio 0</span></span><span class="tile-t">Parametri del kernel dell&#x27;host non valutabili dal container</span><span class="tile-c">Kernel</span></a><a class="tile sev-INFO" href="#f-19" title="Programmi SUID di sistema: 10"><span class="tile-h"><span class="pill sev-INFO">Info</span><span class="tile-r">rischio 0</span></span><span class="tile-t">Programmi SUID di sistema: 10</span><span class="tile-c">File system</span></a><a class="tile sev-INFO" href="#f-20" title="Protezioni del sistema non valutabili in un container"><span class="tile-h"><span class="pill sev-INFO">Info</span><span class="tile-r">rischio 0</span></span><span class="tile-t">Protezioni del sistema non valutabili in un container</span><span class="tile-c">Protezioni del sistema</span></a></div>
+  </div>
+</details>
+<details class="area-panel" id="area-logging">
+  <summary><strong>Log e monitoraggio</strong> <span class="g-count">1</span>
+    <span class="muted">0 problemi, 1 informativo</span></summary>
+  <div class="area-body">
+    <p class="muted">Log persistenti, auditd, protezione anti brute-force.</p>
+    <div class="rscroll"><table class="heat inner">
+      <thead><tr><th scope="col">Controllo</th><th scope="col">Critico</th><th scope="col">Alto</th><th scope="col">Medio</th><th scope="col">Basso</th><th scope="col">Info</th><th scope="col">Totale</th></tr></thead>
+      <tbody><tr><th scope="row">Log e audit</th><td class="hm zero">·</td><td class="hm zero">·</td><td class="hm zero">·</td><td class="hm zero">·</td><td class="hm sev-INFO hot" style="--hm:90%" title="1 informativi">1</td><td class="hm-tot">1</td></tr></tbody>
+    </table></div>
+    <h4>Tutti i finding dell'area</h4>
+    <div class="tiles"><a class="tile sev-INFO" href="#f-21" title="Servizi di log e audit non verificabili"><span class="tile-h"><span class="pill sev-INFO">Info</span><span class="tile-r">rischio 0</span></span><span class="tile-t">Servizi di log e audit non verificabili</span><span class="tile-c">Log e audit</span></a></div>
+  </div>
+</details>
+<details class="area-panel" id="area-system">
+  <summary><strong>Sistema e svolgimento</strong> <span class="g-count">1</span>
+    <span class="muted">0 problemi, 1 informativo</span></summary>
+  <div class="area-body">
+    <p class="muted">Informazioni sul sistema ed esito dei controlli.</p>
+    <div class="rscroll"><table class="heat inner">
+      <thead><tr><th scope="col">Controllo</th><th scope="col">Critico</th><th scope="col">Alto</th><th scope="col">Medio</th><th scope="col">Basso</th><th scope="col">Info</th><th scope="col">Totale</th></tr></thead>
+      <tbody><tr><th scope="row">Informazioni di sistema</th><td class="hm zero">·</td><td class="hm zero">·</td><td class="hm zero">·</td><td class="hm zero">·</td><td class="hm sev-INFO hot" style="--hm:90%" title="1 informativi">1</td><td class="hm-tot">1</td></tr></tbody>
+    </table></div>
+    <h4>Tutti i finding dell'area</h4>
+    <div class="tiles"><a class="tile sev-INFO" href="#f-15" title="Informazioni di sistema"><span class="tile-h"><span class="pill sev-INFO">Info</span><span class="tile-r">rischio 0</span></span><span class="tile-t">Informazioni di sistema</span><span class="tile-c">Informazioni di sistema</span></a></div>
+  </div>
+</details></div>
+</section>
+<section aria-labelledby="risk-title">
+  <h2 id="risk-title">Rischio = impatto × probabilità</h2>
+  <p class="lead">L'<strong>impatto</strong> è la gravità del problema (da 1 a 4); la <strong>probabilità</strong>
+  dice quanto è probabile che sia reale e sfruttabile (da 1 a 3, dalla confidenza del rilevamento).
+  Il rischio è il prodotto: da 1 a 12. Il <em>livello</em> nel riepilogo invece è quello della severità
+  più alta trovata, quindi può essere più alto del rischio massimo della matrice (per esempio un problema
+  grave ma rilevato con confidenza media).</p>
+  <div class="rscroll"><table class="rmatrix">
+    <thead><tr><th></th><th scope="col">Probabilità bassa (1)</th><th scope="col">Probabilità media (2)</th><th scope="col">Probabilità alta (3)</th></tr></thead>
+    <tbody><tr><th scope="row">Impatto critico (4)</th><td class="rm sev-MEDIUM zero" title="Rischio 4: medio"><strong>0</strong><span>rischio 4</span></td><td class="rm sev-HIGH zero" title="Rischio 8: alto"><strong>0</strong><span>rischio 8</span></td><td class="rm sev-CRITICAL zero" title="Rischio 12: critico"><strong>0</strong><span>rischio 12</span></td></tr><tr><th scope="row">Impatto alto (3)</th><td class="rm sev-LOW zero" title="Rischio 3: basso"><strong>0</strong><span>rischio 3</span></td><td class="rm sev-MEDIUM zero" title="Rischio 6: medio"><strong>0</strong><span>rischio 6</span></td><td class="rm sev-HIGH zero" title="Rischio 9: alto"><strong>0</strong><span>rischio 9</span></td></tr><tr><th scope="row">Impatto medio (2)</th><td class="rm sev-LOW zero" title="Rischio 2: basso"><strong>0</strong><span>rischio 2</span></td><td class="rm sev-MEDIUM" title="Rischio 4: medio"><strong>4</strong><span>rischio 4</span></td><td class="rm sev-MEDIUM" title="Rischio 6: medio"><strong>3</strong><span>rischio 6</span></td></tr><tr><th scope="row">Impatto basso (1)</th><td class="rm sev-LOW" title="Rischio 1: basso"><strong>1</strong><span>rischio 1</span></td><td class="rm sev-LOW" title="Rischio 2: basso"><strong>4</strong><span>rischio 2</span></td><td class="rm sev-LOW zero" title="Rischio 3: basso"><strong>0</strong><span>rischio 3</span></td></tr></tbody>
+  </table></div>
+  <ul class="rlevels"><li><span class="pill sev-MEDIUM">Medio</span> 7</li><li><span class="pill sev-LOW">Basso</span> 5</li></ul>
+  <h3 class="rtop-h">I finding più rischiosi</h3>
+  <div class="rscroll"><table class="rtop">
+    <thead><tr><th scope="col">Rischio</th><th scope="col">Impatto</th><th scope="col">Probabilità</th><th scope="col">Finding</th></tr></thead>
+    <tbody><tr><td><span class="pill sev-MEDIUM">Medio 6</span></td><td>2</td><td>3</td><td>Aggiornamenti disponibili: 53</td></tr><tr><td><span class="pill sev-MEDIUM">Medio 6</span></td><td>2</td><td>3</td><td>Disco quasi pieno: /opt/claude-code (93%)</td></tr><tr><td><span class="pill sev-MEDIUM">Medio 6</span></td><td>2</td><td>3</td><td>sudo senza password per qualsiasi comando: claude</td></tr><tr><td><span class="pill sev-MEDIUM">Medio 4</span></td><td>2</td><td>2</td><td>Accetta i reindirizzamenti ICMP (net.ipv4.conf.all.accept_redirects=1)</td></tr><tr><td><span class="pill sev-MEDIUM">Medio 4</span></td><td>2</td><td>2</td><td>Aggiornamenti di sicurezza automatici non attivi</td></tr><tr><td><span class="pill sev-MEDIUM">Medio 4</span></td><td>2</td><td>2</td><td>Nessun blocco dopo tentativi di accesso falliti</td></tr><tr><td><span class="pill sev-MEDIUM">Medio 4</span></td><td>2</td><td>2</td><td>Nessun controllo sulla qualità delle password</td></tr><tr><td><span class="pill sev-LOW">Basso 2</span></td><td>1</td><td>2</td><td>Controllo dell&#x27;indirizzo sorgente disattivato (net.ipv4.conf.all.rp_filter=0)</td></tr><tr><td><span class="pill sev-LOW">Basso 2</span></td><td>1</td><td>2</td><td>File scrivibili da tutti nelle cartelle temporanee: 7</td></tr><tr><td><span class="pill sev-LOW">Basso 2</span></td><td>1</td><td>2</td><td>Invia reindirizzamenti ICMP (net.ipv4.conf.all.send_redirects=1)</td></tr></tbody>
+  </table></div>
+</section>
+<section aria-labelledby="cat-title">
+  <h2 id="cat-title">Dove sono i problemi</h2>
+  <p class="lead">Numero di problemi (esclusi i finding informativi) per area.</p>
+  <ul class="cats"><li data-cat="authentication"><span class="cat-name">authentication</span><span class="cat-bar"><span style="width:100%"></span></span><span class="cat-n">4</span></li><li data-cat="filesystem"><span class="cat-name">filesystem</span><span class="cat-bar"><span style="width:75%"></span></span><span class="cat-n">3</span></li><li data-cat="network"><span class="cat-name">network</span><span class="cat-bar"><span style="width:75%"></span></span><span class="cat-n">3</span></li><li data-cat="packages"><span class="cat-name">packages</span><span class="cat-bar"><span style="width:50%"></span></span><span class="cat-n">2</span></li></ul>
+</section>
+<section aria-labelledby="comp-title">
+  <h2 id="comp-title">Riferimenti normativi</h2>
+  <p class="lead">I controlli di CIS Controls v8, ISO/IEC 27001:2022 (Annex A) e NIST SP 800-53 Rev. 5 a cui si
+  riferiscono i problemi trovati. È un aiuto per l'audit: un problema indica una possibile carenza rispetto
+  al controllo, ma l'assenza di problemi non dimostra la conformità (molti requisiti sono organizzativi).</p>
+  <div class="areas">
+  <details class="area-panel" open>
+    <summary><strong>CIS Controls v8</strong> <span class="g-count">6</span>
+      <span class="muted">6 controlli con almeno un problema</span></summary>
+    <div class="area-body"><div class="rscroll"><table class="rtop">
+      <thead><tr><th scope="col">Controllo</th><th scope="col">Titolo</th><th scope="col">Problemi</th><th scope="col">Più grave</th></tr></thead>
+      <tbody><tr><td><code>4.1</code></td><td>Establish and maintain a secure configuration process</td><td class="num">3</td><td><span class="pill sev-MEDIUM">Medio</span></td></tr><tr><td><code>5.2</code></td><td>Use unique passwords</td><td class="num">2</td><td><span class="pill sev-MEDIUM">Medio</span></td></tr><tr><td><code>7.3</code></td><td>Perform automated operating system patch management</td><td class="num">2</td><td><span class="pill sev-MEDIUM">Medio</span></td></tr><tr><td><code>5.4</code></td><td>Restrict administrator privileges to dedicated administrator accounts</td><td class="num">1</td><td><span class="pill sev-MEDIUM">Medio</span></td></tr><tr><td><code>8.3</code></td><td>Ensure adequate audit log storage</td><td class="num">1</td><td><span class="pill sev-MEDIUM">Medio</span></td></tr><tr><td><code>3.3</code></td><td>Configure data access control lists</td><td class="num">2</td><td><span class="pill sev-LOW">Basso</span></td></tr></tbody></table></div></div>
+  </details>
+  <details class="area-panel">
+    <summary><strong>ISO/IEC 27001:2022</strong> <span class="g-count">7</span>
+      <span class="muted">7 controlli con almeno un problema</span></summary>
+    <div class="area-body"><div class="rscroll"><table class="rtop">
+      <thead><tr><th scope="col">Controllo</th><th scope="col">Titolo</th><th scope="col">Problemi</th><th scope="col">Più grave</th></tr></thead>
+      <tbody><tr><td><code>A.8.5</code></td><td>Secure authentication</td><td class="num">3</td><td><span class="pill sev-MEDIUM">Medio</span></td></tr><tr><td><code>A.8.9</code></td><td>Configuration management</td><td class="num">3</td><td><span class="pill sev-MEDIUM">Medio</span></td></tr><tr><td><code>A.5.17</code></td><td>Authentication information</td><td class="num">2</td><td><span class="pill sev-MEDIUM">Medio</span></td></tr><tr><td><code>A.8.8</code></td><td>Management of technical vulnerabilities</td><td class="num">2</td><td><span class="pill sev-MEDIUM">Medio</span></td></tr><tr><td><code>A.8.2</code></td><td>Privileged access rights</td><td class="num">1</td><td><span class="pill sev-MEDIUM">Medio</span></td></tr><tr><td><code>A.8.6</code></td><td>Capacity management</td><td class="num">1</td><td><span class="pill sev-MEDIUM">Medio</span></td></tr><tr><td><code>A.8.3</code></td><td>Information access restriction</td><td class="num">2</td><td><span class="pill sev-LOW">Basso</span></td></tr></tbody></table></div></div>
+  </details>
+  <details class="area-panel">
+    <summary><strong>NIST SP 800-53 Rev. 5</strong> <span class="g-count">7</span>
+      <span class="muted">7 controlli con almeno un problema</span></summary>
+    <div class="area-body"><div class="rscroll"><table class="rtop">
+      <thead><tr><th scope="col">Controllo</th><th scope="col">Titolo</th><th scope="col">Problemi</th><th scope="col">Più grave</th></tr></thead>
+      <tbody><tr><td><code>CM-6</code></td><td>Configuration Settings</td><td class="num">5</td><td><span class="pill sev-MEDIUM">Medio</span></td></tr><tr><td><code>IA-5</code></td><td>Authenticator Management</td><td class="num">2</td><td><span class="pill sev-MEDIUM">Medio</span></td></tr><tr><td><code>SI-2</code></td><td>Flaw Remediation</td><td class="num">2</td><td><span class="pill sev-MEDIUM">Medio</span></td></tr><tr><td><code>AC-6</code></td><td>Least Privilege</td><td class="num">1</td><td><span class="pill sev-MEDIUM">Medio</span></td></tr><tr><td><code>AC-7</code></td><td>Unsuccessful Logon Attempts</td><td class="num">1</td><td><span class="pill sev-MEDIUM">Medio</span></td></tr><tr><td><code>AU-4</code></td><td>Audit Log Storage Capacity</td><td class="num">1</td><td><span class="pill sev-MEDIUM">Medio</span></td></tr><tr><td><code>AC-3</code></td><td>Access Enforcement</td><td class="num">2</td><td><span class="pill sev-LOW">Basso</span></td></tr></tbody></table></div></div>
+  </details></div>
+</section>
+<section aria-labelledby="attack-title">
+  <h2 id="attack-title">Tecniche d'attacco (MITRE ATT&amp;CK)</h2>
+  <p class="lead">Le tecniche che i problemi trovati rendono possibili o più facili (ATT&amp;CK v20.0;
+  il collegamento è un giudizio di WatchDog, non una mappa ufficiale di MITRE). Con <code>--attack-layer</code> e un layer di ATT&amp;CK Navigator (per esempio quello di detection-engineering-lab) qui compare anche se ogni tecnica è rilevata.</p>
+  <div class="rscroll"><table class="rtop">
+    <thead><tr><th scope="col">ID</th><th scope="col">Tecnica</th><th scope="col">Problemi</th><th scope="col">Più grave</th><th scope="col">Finding</th></tr></thead>
+    <tbody><tr><td><code>T1110</code></td><td>Brute Force<br><span class="muted">credential-access</span></td><td class="num">3</td><td><span class="pill sev-MEDIUM">Medio</span></td><td class="muted">Le password non hanno una scadenza ragionevole; Nessun controllo sulla qualità delle password; Nessun blocco dopo tentativi di accesso falliti</td></tr><tr><td><code>T1068</code></td><td>Exploitation for Privilege Escalation<br><span class="muted">privilege-escalation</span></td><td class="num">1</td><td><span class="pill sev-MEDIUM">Medio</span></td><td class="muted">Aggiornamenti disponibili: 53</td></tr><tr><td><code>T1190</code></td><td>Exploit Public-Facing Application<br><span class="muted">initial-access</span></td><td class="num">1</td><td><span class="pill sev-MEDIUM">Medio</span></td><td class="muted">Aggiornamenti disponibili: 53</td></tr><tr><td><code>T1548.003</code></td><td>Abuse Elevation Control Mechanism: Sudo and Sudo Caching<br><span class="muted">privilege-escalation</span></td><td class="num">1</td><td><span class="pill sev-MEDIUM">Medio</span></td><td class="muted">sudo senza password per qualsiasi comando: claude</td></tr><tr><td><code>T1548.001</code></td><td>Abuse Elevation Control Mechanism: Setuid and Setgid<br><span class="muted">privilege-escalation</span></td><td class="num">1</td><td><span class="pill sev-LOW">Basso</span></td><td class="muted">File SGID trovati: 8</td></tr></tbody>
+  </table></div>
+</section>
+<section aria-labelledby="cov-title">
+  <h2 id="cov-title">Cosa è stato controllato</h2>
+  <ul class="checks"><li><strong>Informazioni di sistema</strong><span>Sistema operativo, kernel, architettura e hostname.</span><span class="t">esecuzione 0.0 s</span></li><li><strong>Utenti e gruppi</strong><span>Account con UID 0, password vuote, utenti con shell di login, gruppi privilegiati.</span><span class="t">esecuzione 0.0 s</span></li><li><strong>Configurazione SSH</strong><span>Impostazioni di sshd: login di root, password, X11, protocollo, porta.</span><span class="t">esecuzione 0.0 s</span></li><li><strong>Firewall</strong><span>Presenza e stato di ufw, firewalld, nftables o iptables.</span><span class="t">esecuzione 0.1 s</span></li><li><strong>Servizi e porte</strong><span>Servizi in errore e servizi o porte pericolosi in ascolto.</span><span class="t">esecuzione 0.0 s</span></li><li><strong>File system</strong><span>File SUID/SGID, file scrivibili da tutti, permessi dei file sensibili, spazio su disco.</span><span class="t">esecuzione 2.4 s</span></li><li><strong>Pacchetti</strong><span>Pacchetti installati e aggiornamenti disponibili.</span><span class="t">esecuzione 4.8 s</span></li><li><strong>Password policy e sudoers</strong><span>Scadenza e robustezza password, blocco account, regole sudo senza password.</span><span class="t">esecuzione 0.0 s</span></li><li><strong>Hardening del kernel</strong><span>Parametri sysctl di sicurezza (ASLR, redirect ICMP, ptrace, ecc.) e Secure Boot.</span><span class="t">esecuzione 0.0 s</span></li><li><strong>Log e audit</strong><span>auditd, log persistenti, protezione anti brute-force (fail2ban), permessi dei log.</span><span class="t">esecuzione 0.0 s</span></li><li><strong>Aggiornamenti automatici</strong><span>Aggiornamenti automatici, data dell&#x27;ultimo aggiornamento, riavvio richiesto.</span><span class="t">esecuzione 0.1 s</span></li><li><strong>Persistenza e attività sospette</strong><span>Cron e servizi systemd sospetti, ld.so.preload, processi con eseguibile cancellato, chiavi SSH autorizzate.</span><span class="t">esecuzione 0.2 s</span></li><li><strong>Protezioni del sistema</strong><span>Linux: SELinux o AppArmor e cifratura del disco di sistema. macOS: SIP, FileVault, Gatekeeper.</span><span class="t">esecuzione 0.0 s</span></li></ul>
+  
+  
+  
+</section>
+<section aria-labelledby="find-title">
+  <h2 id="find-title">Findings</h2>
+  <p class="lead">Ordinati per gravità. Apri un finding per vedere spiegazione, evidenza e azione consigliata.</p>
+  <div class="tools" id="tools" hidden>
+    <input type="search" id="q" placeholder="Cerca per titolo, area o origine…" aria-label="Cerca tra i finding">
+    <select id="cat" aria-label="Filtra per area"><option value="">Tutte le aree</option><option value="authentication">authentication</option><option value="filesystem">filesystem</option><option value="firewall">firewall</option><option value="kernel">kernel</option><option value="logging">logging</option><option value="network">network</option><option value="packages">packages</option><option value="privileges">privileges</option><option value="protections">protections</option><option value="services">services</option><option value="system_info">system_info</option><option value="users">users</option></select>
+    <button type="button" id="expand">Espandi tutto</button>
+    <button type="button" id="collapse">Comprimi tutto</button>
+    <button type="button" id="reset">Mostra tutto</button>
+    <span id="shown" class="muted" aria-live="polite"></span>
+  </div>
+  <div class="group" data-group="MEDIUM"><h3 class="sev-MEDIUM">Medi <span class="g-count">7</span></h3>
+<details class="finding sev-MEDIUM" id="f-1" data-sev="MEDIUM" data-cat="network" data-search="accetta i reindirizzamenti icmp (net.ipv4.conf.all.accept_redirects=1) network kernel:net.ipv4.conf.all.accept_redirects un attaccante sulla rete può alterare le rotte del sistema. cis 4.1 · iso a.8.9 · nist cm-6">
+  <summary>
+    <span class="pill sev-MEDIUM">Medio</span>
+    <span class="f-title">Accetta i reindirizzamenti ICMP (net.ipv4.conf.all.accept_redirects=1)</span>
+    <span class="f-cat">network</span>
+  </summary>
+  <div class="f-body">
+    <h4>Cosa significa</h4>
+    <p>Un attaccante sulla rete può alterare le rotte del sistema.</p>
+    <h4>Evidenza</h4><pre class="evidence">net.ipv4.conf.all.accept_redirects = 1 (consigliato: 0)</pre>
+    <div class="reco"><h4>Cosa fare</h4><p>Impostare net.ipv4.conf.all.accept_redirects = 0 in /etc/sysctl.d/.</p></div>
+    <div class="cmd"><h4>Comando suggerito</h4>
+      <pre class="evidence cmd-text">echo &#x27;net.ipv4.conf.all.accept_redirects = 0&#x27; | sudo tee -a /etc/sysctl.d/99-watchdog-hardening.conf &amp;&amp; sudo sysctl -p /etc/sysctl.d/99-watchdog-hardening.conf</pre>
+      <button type="button" class="copy" hidden>Copia comando</button>
+      <p class="muted">Suggerimento generato dal tool: non è stato eseguito. Leggilo e verificalo prima di lanciarlo
+      (meglio prima su un sistema non critico). Per SSH e firewall assicurati di non perdere l'accesso alla macchina.</p>
+    </div>
+    <p class="f-meta">Rischio 4 (medio) = impatto 2 × probabilità 2
+    · Origine <code>kernel:net.ipv4.conf.all.accept_redirects</code> · Confidenza media:
+    Probabile: conviene confermarlo.</p>
+    <p class="f-meta refs">Riferimenti: CIS 4.1 · ISO A.8.9 · NIST CM-6</p>
+  </div>
+</details>
+<details class="finding sev-MEDIUM" id="f-2" data-sev="MEDIUM" data-cat="packages" data-search="aggiornamenti di sicurezza automatici non attivi packages updates:no-auto-updates le correzioni di sicurezza non vengono applicate da sole: la macchina resta vulnerabile finché qualcuno non aggiorna a mano. cis 7.3 · iso a.8.8 · nist si-2">
+  <summary>
+    <span class="pill sev-MEDIUM">Medio</span>
+    <span class="f-title">Aggiornamenti di sicurezza automatici non attivi</span>
+    <span class="f-cat">packages</span>
+  </summary>
+  <div class="f-body">
+    <h4>Cosa significa</h4>
+    <p>Le correzioni di sicurezza non vengono applicate da sole: la macchina resta vulnerabile finché qualcuno non aggiorna a mano.</p>
+    <h4>Evidenza</h4><pre class="evidence">pacchetto unattended-upgrades non installato</pre>
+    <div class="reco"><h4>Cosa fare</h4><p>Installare unattended-upgrades e abilitare gli aggiornamenti di sicurezza automatici.</p></div>
+    <div class="cmd"><h4>Comando suggerito</h4>
+      <pre class="evidence cmd-text">sudo apt-get install unattended-upgrades &amp;&amp; sudo dpkg-reconfigure -plow unattended-upgrades</pre>
+      <button type="button" class="copy" hidden>Copia comando</button>
+      <p class="muted">Suggerimento generato dal tool: non è stato eseguito. Leggilo e verificalo prima di lanciarlo
+      (meglio prima su un sistema non critico). Per SSH e firewall assicurati di non perdere l'accesso alla macchina.</p>
+    </div>
+    <p class="f-meta">Rischio 4 (medio) = impatto 2 × probabilità 2
+    · Origine <code>updates:no-auto-updates</code> · Confidenza media:
+    Probabile: conviene confermarlo.</p>
+    <p class="f-meta refs">Riferimenti: CIS 7.3 · ISO A.8.8 · NIST SI-2</p>
+  </div>
+</details>
+<details class="finding sev-MEDIUM" id="f-3" data-sev="MEDIUM" data-cat="packages" data-search="aggiornamenti disponibili: 53 packages packages:apt-upgradable 53 pacchetti hanno aggiornamenti disponibili. cis 7.3 · iso a.8.8 · nist si-2 · att&amp;ck t1190, t1068">
+  <summary>
+    <span class="pill sev-MEDIUM">Medio</span>
+    <span class="f-title">Aggiornamenti disponibili: 53</span>
+    <span class="f-cat">packages</span>
+  </summary>
+  <div class="f-body">
+    <h4>Cosa significa</h4>
+    <p>53 pacchetti hanno aggiornamenti disponibili.</p>
+    <h4>Evidenza</h4><pre class="evidence">apt/noble-security 2.8.4ubuntu0.1 amd64 [upgradable from: 2.8.3]
+ca-certificates/noble-updates,noble-security 20260816ubuntu0.24.04.1 all [upgradable from: 20260601~24.04.1]
+distro-info-data/noble-updates,noble-security 2026.10.12-0ubuntu0.24.04.1 all [upgradable from: 0.72-0ubuntu0.24.04.1]
+gir1.2-glib-2.0/noble-updates 2.80.0-6ubuntu3.10 amd64 [upgradable from: 2.80.0-6ubuntu3.9]
+git-man/noble-updates,noble-security 1:2.43.0-1ubuntu7.4 all [upgradable from: 1:2.43.0-1ubuntu7.3]
+git/noble-updat</pre>
+    <div class="reco"><h4>Cosa fare</h4><p>Applicare gli aggiornamenti: &#x27;apt update &amp;&amp; apt upgrade&#x27;.</p></div>
+    <div class="cmd"><h4>Comando suggerito</h4>
+      <pre class="evidence cmd-text">sudo apt-get update &amp;&amp; sudo apt-get upgrade</pre>
+      <button type="button" class="copy" hidden>Copia comando</button>
+      <p class="muted">Suggerimento generato dal tool: non è stato eseguito. Leggilo e verificalo prima di lanciarlo
+      (meglio prima su un sistema non critico). Per SSH e firewall assicurati di non perdere l'accesso alla macchina.</p>
+    </div>
+    <p class="f-meta">Rischio 6 (medio) = impatto 2 × probabilità 3
+    · Origine <code>packages:apt-upgradable</code> · Confidenza alta:
+    Rilevato con certezza.</p>
+    <p class="f-meta refs">Riferimenti: CIS 7.3 · ISO A.8.8 · NIST SI-2 · ATT&amp;CK T1190, T1068</p>
+  </div>
+</details>
+<details class="finding sev-MEDIUM" id="f-4" data-sev="MEDIUM" data-cat="filesystem" data-search="disco quasi pieno: /opt/claude-code (93%) filesystem filesystem:disk-usage il mount /opt/claude-code è utilizzato al 93%. cis 8.3 · iso a.8.6 · nist au-4">
+  <summary>
+    <span class="pill sev-MEDIUM">Medio</span>
+    <span class="f-title">Disco quasi pieno: /opt/claude-code (93%)</span>
+    <span class="f-cat">filesystem</span>
+  </summary>
+  <div class="f-body">
+    <h4>Cosa significa</h4>
+    <p>Il mount /opt/claude-code è utilizzato al 93%.</p>
+    <h4>Evidenza</h4><pre class="evidence">/dev/vdc                                                                 386952   351860         27332      93% /opt/claude-code</pre>
+    <div class="reco"><h4>Cosa fare</h4><p>Liberare spazio o estendere il filesystem.</p></div>
+    <p class="f-meta">Rischio 6 (medio) = impatto 2 × probabilità 3
+    · Origine <code>filesystem:disk-usage</code> · Confidenza alta:
+    Rilevato con certezza.</p>
+    <p class="f-meta refs">Riferimenti: CIS 8.3 · ISO A.8.6 · NIST AU-4</p>
+  </div>
+</details>
+<details class="finding sev-MEDIUM" id="f-5" data-sev="MEDIUM" data-cat="authentication" data-search="nessun blocco dopo tentativi di accesso falliti authentication auth-policy:no-lockout pam non usa pam_faillock né pam_tally2: i tentativi di indovinare le password non vengono limitati a livello di account (un fail2ban può compensare per ssh). iso a.8.5 · nist ac-7 · att&amp;ck t1110">
+  <summary>
+    <span class="pill sev-MEDIUM">Medio</span>
+    <span class="f-title">Nessun blocco dopo tentativi di accesso falliti</span>
+    <span class="f-cat">authentication</span>
+  </summary>
+  <div class="f-body">
+    <h4>Cosa significa</h4>
+    <p>PAM non usa pam_faillock né pam_tally2: i tentativi di indovinare le password non vengono limitati a livello di account (un fail2ban può compensare per SSH).</p>
+    <h4>Evidenza</h4><pre class="evidence">nessun riferimento in /etc/pam.d</pre>
+    <div class="reco"><h4>Cosa fare</h4><p>Configurare pam_faillock (deny=5, unlock_time=900) o usare fail2ban.</p></div>
+    <p class="f-meta">Rischio 4 (medio) = impatto 2 × probabilità 2
+    · Origine <code>auth-policy:no-lockout</code> · Confidenza media:
+    Probabile: conviene confermarlo.</p>
+    <p class="f-meta refs">Riferimenti: ISO A.8.5 · NIST AC-7 · ATT&amp;CK T1110</p>
+  </div>
+</details>
+<details class="finding sev-MEDIUM" id="f-6" data-sev="MEDIUM" data-cat="authentication" data-search="nessun controllo sulla qualità delle password authentication auth-policy:no-pwquality pam non usa pam_pwquality, pam_cracklib o pam_passwdqc: sono ammesse password banali. cis 5.2 · iso a.5.17, a.8.5 · nist ia-5 · att&amp;ck t1110">
+  <summary>
+    <span class="pill sev-MEDIUM">Medio</span>
+    <span class="f-title">Nessun controllo sulla qualità delle password</span>
+    <span class="f-cat">authentication</span>
+  </summary>
+  <div class="f-body">
+    <h4>Cosa significa</h4>
+    <p>PAM non usa pam_pwquality, pam_cracklib o pam_passwdqc: sono ammesse password banali.</p>
+    <h4>Evidenza</h4><pre class="evidence">nessun riferimento in /etc/pam.d</pre>
+    <div class="reco"><h4>Cosa fare</h4><p>Installare e configurare libpam-pwquality (minlen almeno 12).</p></div>
+    <div class="cmd"><h4>Comando suggerito</h4>
+      <pre class="evidence cmd-text">sudo apt-get install libpam-pwquality</pre>
+      <button type="button" class="copy" hidden>Copia comando</button>
+      <p class="muted">Suggerimento generato dal tool: non è stato eseguito. Leggilo e verificalo prima di lanciarlo
+      (meglio prima su un sistema non critico). Per SSH e firewall assicurati di non perdere l'accesso alla macchina.</p>
+    </div>
+    <p class="f-meta">Rischio 4 (medio) = impatto 2 × probabilità 2
+    · Origine <code>auth-policy:no-pwquality</code> · Confidenza media:
+    Probabile: conviene confermarlo.</p>
+    <p class="f-meta refs">Riferimenti: CIS 5.2 · ISO A.5.17, A.8.5 · NIST IA-5 · ATT&amp;CK T1110</p>
+  </div>
+</details>
+<details class="finding sev-MEDIUM" id="f-7" data-sev="MEDIUM" data-cat="authentication" data-search="sudo senza password per qualsiasi comando: claude authentication auth-policy:sudo-nopasswd-all questi utenti o gruppi diventano root senza password: chi ne ottiene l&#x27;accesso ottiene root. cis 5.4 · iso a.8.2 · nist ac-6 · att&amp;ck t1548.003">
+  <summary>
+    <span class="pill sev-MEDIUM">Medio</span>
+    <span class="f-title">sudo senza password per qualsiasi comando: claude</span>
+    <span class="f-cat">authentication</span>
+  </summary>
+  <div class="f-body">
+    <h4>Cosa significa</h4>
+    <p>Questi utenti o gruppi diventano root senza password: chi ne ottiene l&#x27;accesso ottiene root.</p>
+    <h4>Evidenza</h4><pre class="evidence">claude ALL=(ALL) NOPASSWD: ALL</pre>
+    <div class="reco"><h4>Cosa fare</h4><p>Limitare NOPASSWD ai soli comandi necessari, oppure richiedere la password.</p></div>
+    <p class="f-meta">Rischio 6 (medio) = impatto 2 × probabilità 3
+    · Origine <code>auth-policy:sudo-nopasswd-all</code> · Confidenza alta:
+    Rilevato con certezza.</p>
+    <p class="f-meta refs">Riferimenti: CIS 5.4 · ISO A.8.2 · NIST AC-6 · ATT&amp;CK T1548.003</p>
+  </div>
+</details></div><div class="group" data-group="LOW"><h3 class="sev-LOW">Bassi <span class="g-count">5</span></h3>
+<details class="finding sev-LOW" id="f-8" data-sev="LOW" data-cat="network" data-search="controllo dell&#x27;indirizzo sorgente disattivato (net.ipv4.conf.all.rp_filter=0) network kernel:net.ipv4.conf.all.rp_filter il filtro rp_filter riduce lo spoofing degli indirizzi ip. cis 4.1 · iso a.8.9 · nist cm-6">
+  <summary>
+    <span class="pill sev-LOW">Basso</span>
+    <span class="f-title">Controllo dell&#x27;indirizzo sorgente disattivato (net.ipv4.conf.all.rp_filter=0)</span>
+    <span class="f-cat">network</span>
+  </summary>
+  <div class="f-body">
+    <h4>Cosa significa</h4>
+    <p>Il filtro rp_filter riduce lo spoofing degli indirizzi IP.</p>
+    <h4>Evidenza</h4><pre class="evidence">net.ipv4.conf.all.rp_filter = 0 (consigliato: 1)</pre>
+    <div class="reco"><h4>Cosa fare</h4><p>Impostare net.ipv4.conf.all.rp_filter = 1 in /etc/sysctl.d/.</p></div>
+    <div class="cmd"><h4>Comando suggerito</h4>
+      <pre class="evidence cmd-text">echo &#x27;net.ipv4.conf.all.rp_filter = 1&#x27; | sudo tee -a /etc/sysctl.d/99-watchdog-hardening.conf &amp;&amp; sudo sysctl -p /etc/sysctl.d/99-watchdog-hardening.conf</pre>
+      <button type="button" class="copy" hidden>Copia comando</button>
+      <p class="muted">Suggerimento generato dal tool: non è stato eseguito. Leggilo e verificalo prima di lanciarlo
+      (meglio prima su un sistema non critico). Per SSH e firewall assicurati di non perdere l'accesso alla macchina.</p>
+    </div>
+    <p class="f-meta">Rischio 2 (basso) = impatto 1 × probabilità 2
+    · Origine <code>kernel:net.ipv4.conf.all.rp_filter</code> · Confidenza media:
+    Probabile: conviene confermarlo.</p>
+    <p class="f-meta refs">Riferimenti: CIS 4.1 · ISO A.8.9 · NIST CM-6</p>
+  </div>
+</details>
+<details class="finding sev-LOW" id="f-9" data-sev="LOW" data-cat="filesystem" data-search="file sgid trovati: 8 filesystem filesystem:sgid file con bit sgid impostato. cis 3.3 · iso a.8.3 · nist ac-3, cm-6 · att&amp;ck t1548.001">
+  <summary>
+    <span class="pill sev-LOW">Basso</span>
+    <span class="f-title">File SGID trovati: 8</span> <span class="pill verify">da verificare</span>
+    <span class="f-cat">filesystem</span>
+  </summary>
+  <div class="f-body">
+    <h4>Cosa significa</h4>
+    <p>File con bit SGID impostato.</p>
+    <h4>Evidenza</h4><pre class="evidence">/usr/bin/chage
+/usr/bin/expiry
+/usr/bin/crontab
+/usr/bin/dotlockfile
+/usr/sbin/pam_extrausers_chkpwd
+/usr/sbin/unix_chkpwd
+/usr/sbin/postdrop
+/usr/sbin/postqueue</pre>
+    <div class="reco"><h4>Cosa fare</h4><p>Verificare che ogni file SGID sia necessario.</p></div>
+    <p class="f-meta">Rischio 1 (basso) = impatto 1 × probabilità 1
+    · Origine <code>filesystem:sgid</code> · Confidenza bassa:
+    Indicativo: il controllo era incompleto o non conclusivo, verificare a mano.</p>
+    <p class="f-meta refs">Riferimenti: CIS 3.3 · ISO A.8.3 · NIST AC-3, CM-6 · ATT&amp;CK T1548.001</p>
+  </div>
+</details>
+<details class="finding sev-LOW" id="f-10" data-sev="LOW" data-cat="filesystem" data-search="file scrivibili da tutti nelle cartelle temporanee: 7 filesystem filesystem:world-writable-tmp nelle cartelle temporanee è comune, ma se uno di questi file viene letto o eseguito da un servizio o da uno script di root, chiunque può cambiarne il contenuto. cis 3.3 · iso a.8.3 · nist ac-3, cm-6">
+  <summary>
+    <span class="pill sev-LOW">Basso</span>
+    <span class="f-title">File scrivibili da tutti nelle cartelle temporanee: 7</span>
+    <span class="f-cat">filesystem</span>
+  </summary>
+  <div class="f-body">
+    <h4>Cosa significa</h4>
+    <p>Nelle cartelle temporanee è comune, ma se uno di questi file viene letto o eseguito da un servizio o da uno script di root, chiunque può cambiarne il contenuto.</p>
+    <h4>Evidenza</h4><pre class="evidence">/tmp/uv-setuptools-07c4d9ca76b772c3.lock
+/tmp/uv-setuptools-8be88abc6ab73f5f.lock
+/tmp/uv-setuptools-e07a12246690ac1f.lock
+/tmp/claude-0/-home-claude/a7d998da-f91a-5715-82ef-62101cc4208c/scratchpad/hunt/fs/etc/shadow
+/tmp/claude-0/-home-claude/a7d998da-f91a-5715-82ef-62101cc4208c/scratchpad/ln/private/etc/x
+/tmp/uv-bcb837755ba79986.lock
+/tmp/uv-ce9cd633bb00c47d.lock</pre>
+    <div class="reco"><h4>Cosa fare</h4><p>Verificare che nessuno script privilegiato usi questi file.</p></div>
+    <p class="f-meta">Rischio 2 (basso) = impatto 1 × probabilità 2
+    · Origine <code>filesystem:world-writable-tmp</code> · Confidenza media:
+    Probabile: conviene confermarlo.</p>
+    <p class="f-meta refs">Riferimenti: CIS 3.3 · ISO A.8.3 · NIST AC-3, CM-6</p>
+  </div>
+</details>
+<details class="finding sev-LOW" id="f-11" data-sev="LOW" data-cat="network" data-search="invia reindirizzamenti icmp (net.ipv4.conf.all.send_redirects=1) network kernel:net.ipv4.conf.all.send_redirects una macchina che non fa da router non dovrebbe inviarli. cis 4.1 · iso a.8.9 · nist cm-6">
+  <summary>
+    <span class="pill sev-LOW">Basso</span>
+    <span class="f-title">Invia reindirizzamenti ICMP (net.ipv4.conf.all.send_redirects=1)</span>
+    <span class="f-cat">network</span>
+  </summary>
+  <div class="f-body">
+    <h4>Cosa significa</h4>
+    <p>Una macchina che non fa da router non dovrebbe inviarli.</p>
+    <h4>Evidenza</h4><pre class="evidence">net.ipv4.conf.all.send_redirects = 1 (consigliato: 0)</pre>
+    <div class="reco"><h4>Cosa fare</h4><p>Impostare net.ipv4.conf.all.send_redirects = 0 in /etc/sysctl.d/.</p></div>
+    <div class="cmd"><h4>Comando suggerito</h4>
+      <pre class="evidence cmd-text">echo &#x27;net.ipv4.conf.all.send_redirects = 0&#x27; | sudo tee -a /etc/sysctl.d/99-watchdog-hardening.conf &amp;&amp; sudo sysctl -p /etc/sysctl.d/99-watchdog-hardening.conf</pre>
+      <button type="button" class="copy" hidden>Copia comando</button>
+      <p class="muted">Suggerimento generato dal tool: non è stato eseguito. Leggilo e verificalo prima di lanciarlo
+      (meglio prima su un sistema non critico). Per SSH e firewall assicurati di non perdere l'accesso alla macchina.</p>
+    </div>
+    <p class="f-meta">Rischio 2 (basso) = impatto 1 × probabilità 2
+    · Origine <code>kernel:net.ipv4.conf.all.send_redirects</code> · Confidenza media:
+    Probabile: conviene confermarlo.</p>
+    <p class="f-meta refs">Riferimenti: CIS 4.1 · ISO A.8.9 · NIST CM-6</p>
+  </div>
+</details>
+<details class="finding sev-LOW" id="f-12" data-sev="LOW" data-cat="authentication" data-search="le password non hanno una scadenza ragionevole authentication auth-policy:pass-max-days pass_max_days vale 99999: le password nuove non scadono praticamente mai. le linee guida cis indicano al massimo 365 giorni. cis 5.2 · iso a.5.17, a.8.5 · nist ia-5 · att&amp;ck t1110">
+  <summary>
+    <span class="pill sev-LOW">Basso</span>
+    <span class="f-title">Le password non hanno una scadenza ragionevole</span>
+    <span class="f-cat">authentication</span>
+  </summary>
+  <div class="f-body">
+    <h4>Cosa significa</h4>
+    <p>PASS_MAX_DAYS vale 99999: le password nuove non scadono praticamente mai. Le linee guida CIS indicano al massimo 365 giorni.</p>
+    <h4>Evidenza</h4><pre class="evidence">PASS_MAX_DAYS 99999</pre>
+    <div class="reco"><h4>Cosa fare</h4><p>Impostare PASS_MAX_DAYS 365 (o secondo la politica aziendale). Vale per gli account creati dopo la modifica.</p></div>
+    <p class="f-meta">Rischio 2 (basso) = impatto 1 × probabilità 2
+    · Origine <code>auth-policy:pass-max-days</code> · Confidenza media:
+    Probabile: conviene confermarlo.</p>
+    <p class="f-meta refs">Riferimenti: CIS 5.2 · ISO A.5.17, A.8.5 · NIST IA-5 · ATT&amp;CK T1110</p>
+  </div>
+</details></div><div class="group" data-group="INFO"><h3 class="sev-INFO">Informativi <span class="g-count">13</span></h3>
+<details class="finding sev-INFO" id="f-13" data-sev="INFO" data-cat="firewall" data-search="firewall non verificabile dentro un container firewall firewall:container il sistema è un container (docker): il firewall è quello dell&#x27;host e da qui non si vede. va controllato sull&#x27;host. ">
+  <summary>
+    <span class="pill sev-INFO">Info</span>
+    <span class="f-title">Firewall non verificabile dentro un container</span> <span class="pill verify">da verificare</span>
+    <span class="f-cat">firewall</span>
+  </summary>
+  <div class="f-body">
+    <h4>Cosa significa</h4>
+    <p>Il sistema è un container (docker): il firewall è quello dell&#x27;host e da qui non si vede. Va controllato sull&#x27;host.</p>
+    <h4>Evidenza</h4><pre class="evidence">ufw/firewalld non attivi nel container; nessuna regola di input nel suo namespace</pre>
+    <div class="reco"><h4>Cosa fare</h4><p>Verificare a mano su questo sistema: l&#x27;assenza di segnalazioni qui non significa che vada tutto bene.</p></div>
+    <p class="f-meta">Rischio 0 (info) = impatto 0 × probabilità 1
+    · Origine <code>firewall:container</code> · Confidenza bassa:
+    Indicativo: il controllo era incompleto o non conclusivo, verificare a mano.</p>
+  </div>
+</details>
+<details class="finding sev-INFO" id="f-14" data-sev="INFO" data-cat="privileges" data-search="gruppo privilegiato sudo: ubuntu privileges users-collector:privileged-group questi utenti sono nel gruppo &#x27;sudo&#x27;: possono ottenere i privilegi di root. cis 5.4 · iso a.8.2 · nist ac-6">
+  <summary>
+    <span class="pill sev-INFO">Info</span>
+    <span class="f-title">Gruppo privilegiato sudo: ubuntu</span>
+    <span class="f-cat">privileges</span>
+  </summary>
+  <div class="f-body">
+    <h4>Cosa significa</h4>
+    <p>Questi utenti sono nel gruppo &#x27;sudo&#x27;: possono ottenere i privilegi di root.</p>
+    <h4>Evidenza</h4><pre class="evidence">sudo:x:27:ubuntu</pre>
+    <div class="reco"><h4>Cosa fare</h4><p>Verificare che la membership sia autorizzata.</p></div>
+    <p class="f-meta">Rischio 0 (info) = impatto 0 × probabilità 2
+    · Origine <code>users-collector:privileged-group</code> · Confidenza media:
+    Probabile: conviene confermarlo.</p>
+    <p class="f-meta refs">Riferimenti: CIS 5.4 · ISO A.8.2 · NIST AC-6</p>
+  </div>
+</details>
+<details class="finding sev-INFO" id="f-15" data-sev="INFO" data-cat="system_info" data-search="informazioni di sistema system_info linux-check:linux sistema rilevato: ubuntu, 24.04, kernel 6.18.44-fc-v445, x86_64 ">
+  <summary>
+    <span class="pill sev-INFO">Info</span>
+    <span class="f-title">Informazioni di sistema</span>
+    <span class="f-cat">system_info</span>
+  </summary>
+  <div class="f-body">
+    <h4>Cosa significa</h4>
+    <p>Sistema rilevato: Ubuntu, 24.04, kernel 6.18.44-fc-v445, x86_64</p>
+    <h4>Evidenza</h4><pre class="evidence">architecture: x86_64
+hostname: vm
+kernel: 6.18.44-fc-v445
+os_id: ubuntu
+os_name: Ubuntu
+os_version: 24.04</pre>
+    <div class="reco"><h4>Cosa fare</h4><p>Nessuna azione richiesta.</p></div>
+    <p class="f-meta">Rischio 0 (info) = impatto 0 × probabilità 3
+    · Origine <code>linux-check:linux</code> · Confidenza alta:
+    Rilevato con certezza.</p>
+  </div>
+</details>
+<details class="finding sev-INFO" id="f-16" data-sev="INFO" data-cat="packages" data-search="pacchetti installati: 1037 packages packages:apt-installed rilevati 1037 pacchetti installati via apt. ">
+  <summary>
+    <span class="pill sev-INFO">Info</span>
+    <span class="f-title">Pacchetti installati: 1037</span>
+    <span class="f-cat">packages</span>
+  </summary>
+  <div class="f-body">
+    <h4>Cosa significa</h4>
+    <p>Rilevati 1037 pacchetti installati via apt.</p>
+    <h4>Evidenza</h4><pre class="evidence">apt list --installed -&gt; 1037 pacchetti</pre>
+    <div class="reco"><h4>Cosa fare</h4><p>Nessuna azione richiesta.</p></div>
+    <p class="f-meta">Rischio 0 (info) = impatto 0 × probabilità 3
+    · Origine <code>packages:apt-installed</code> · Confidenza alta:
+    Rilevato con certezza.</p>
+  </div>
+</details>
+<details class="finding sev-INFO" id="f-17" data-sev="INFO" data-cat="kernel" data-search="parametri del kernel dell&#x27;host non valutabili dal container kernel kernel:container il sistema è un container (docker): i parametri sysctl non di rete appartengono al kernel dell&#x27;host e vanno controllati lì. ">
+  <summary>
+    <span class="pill sev-INFO">Info</span>
+    <span class="f-title">Parametri del kernel dell&#x27;host non valutabili dal container</span> <span class="pill verify">da verificare</span>
+    <span class="f-cat">kernel</span>
+  </summary>
+  <div class="f-body">
+    <h4>Cosa significa</h4>
+    <p>Il sistema è un container (docker): i parametri sysctl non di rete appartengono al kernel dell&#x27;host e vanno controllati lì.</p>
+    <h4>Evidenza</h4><pre class="evidence">kernel.randomize_va_space, kernel.kptr_restrict, kernel.dmesg_restrict, kernel.yama.ptrace_scope, kernel.unprivileged_bpf_disabled, fs.protected_hardlinks, fs.protected_symlinks, fs.suid_dumpable</pre>
+    <div class="reco"><h4>Cosa fare</h4><p>Verificare a mano su questo sistema: l&#x27;assenza di segnalazioni qui non significa che vada tutto bene.</p></div>
+    <p class="f-meta">Rischio 0 (info) = impatto 0 × probabilità 1
+    · Origine <code>kernel:container</code> · Confidenza bassa:
+    Indicativo: il controllo era incompleto o non conclusivo, verificare a mano.</p>
+  </div>
+</details>
+<details class="finding sev-INFO" id="f-18" data-sev="INFO" data-cat="network" data-search="porte in ascolto non verificabili network services:ports-unverifiable sul sistema non ci sono né `ss` né `netstat`: le porte aperte non sono state controllate. ">
+  <summary>
+    <span class="pill sev-INFO">Info</span>
+    <span class="f-title">Porte in ascolto non verificabili</span> <span class="pill verify">da verificare</span>
+    <span class="f-cat">network</span>
+  </summary>
+  <div class="f-body">
+    <h4>Cosa significa</h4>
+    <p>Sul sistema non ci sono né `ss` né `netstat`: le porte aperte non sono state controllate.</p>
+    <h4>Evidenza</h4><pre class="evidence">ss e netstat non trovati</pre>
+    <div class="reco"><h4>Cosa fare</h4><p>Verificare a mano su questo sistema: l&#x27;assenza di segnalazioni qui non significa che vada tutto bene.</p></div>
+    <p class="f-meta">Rischio 0 (info) = impatto 0 × probabilità 1
+    · Origine <code>services:ports-unverifiable</code> · Confidenza bassa:
+    Indicativo: il controllo era incompleto o non conclusivo, verificare a mano.</p>
+  </div>
+</details>
+<details class="finding sev-INFO" id="f-19" data-sev="INFO" data-cat="filesystem" data-search="programmi suid di sistema: 10 filesystem filesystem:suid-standard programmi con il bit suid previsti dalla distribuzione (passwd, sudo, mount…). cis 3.3 · iso a.8.3 · nist ac-3, cm-6">
+  <summary>
+    <span class="pill sev-INFO">Info</span>
+    <span class="f-title">Programmi SUID di sistema: 10</span>
+    <span class="f-cat">filesystem</span>
+  </summary>
+  <div class="f-body">
+    <h4>Cosa significa</h4>
+    <p>Programmi con il bit SUID previsti dalla distribuzione (passwd, sudo, mount…).</p>
+    <h4>Evidenza</h4><pre class="evidence">/usr/bin/fusermount3
+/usr/bin/sudo
+/usr/bin/chfn
+/usr/bin/chsh
+/usr/bin/gpasswd
+/usr/bin/mount
+/usr/bin/newgrp
+/usr/bin/passwd
+/usr/bin/su
+/usr/bin/umount</pre>
+    <div class="reco"><h4>Cosa fare</h4><p>Nessuna azione richiesta; tenerli aggiornati.</p></div>
+    <p class="f-meta">Rischio 0 (info) = impatto 0 × probabilità 3
+    · Origine <code>filesystem:suid-standard</code> · Confidenza alta:
+    Rilevato con certezza.</p>
+    <p class="f-meta refs">Riferimenti: CIS 3.3 · ISO A.8.3 · NIST AC-3, CM-6</p>
+  </div>
+</details>
+<details class="finding sev-INFO" id="f-20" data-sev="INFO" data-cat="protections" data-search="protezioni del sistema non valutabili in un container protections protections:container selinux, apparmor e cifratura del disco appartengono all&#x27;host che esegue il container: vanno controllati lì. ">
+  <summary>
+    <span class="pill sev-INFO">Info</span>
+    <span class="f-title">Protezioni del sistema non valutabili in un container</span> <span class="pill verify">da verificare</span>
+    <span class="f-cat">protections</span>
+  </summary>
+  <div class="f-body">
+    <h4>Cosa significa</h4>
+    <p>SELinux, AppArmor e cifratura del disco appartengono all&#x27;host che esegue il container: vanno controllati lì.</p>
+    <h4>Evidenza</h4><pre class="evidence">container docker</pre>
+    <div class="reco"><h4>Cosa fare</h4><p>Verificare a mano su questo sistema: l&#x27;assenza di segnalazioni qui non significa che vada tutto bene.</p></div>
+    <p class="f-meta">Rischio 0 (info) = impatto 0 × probabilità 1
+    · Origine <code>protections:container</code> · Confidenza bassa:
+    Indicativo: il controllo era incompleto o non conclusivo, verificare a mano.</p>
+  </div>
+</details>
+<details class="finding sev-INFO" id="f-21" data-sev="INFO" data-cat="logging" data-search="servizi di log e audit non verificabili logging logging:unverifiable non c&#x27;è un init system riconoscibile (tipico di un container): non si può sapere se auditd, syslog o fail2ban sono attivi. ">
+  <summary>
+    <span class="pill sev-INFO">Info</span>
+    <span class="f-title">Servizi di log e audit non verificabili</span> <span class="pill verify">da verificare</span>
+    <span class="f-cat">logging</span>
+  </summary>
+  <div class="f-body">
+    <h4>Cosa significa</h4>
+    <p>Non c&#x27;è un init system riconoscibile (tipico di un container): non si può sapere se auditd, syslog o fail2ban sono attivi.</p>
+    <h4>Evidenza</h4><pre class="evidence">init: unknown, container docker</pre>
+    <div class="reco"><h4>Cosa fare</h4><p>Verificare a mano su questo sistema: l&#x27;assenza di segnalazioni qui non significa che vada tutto bene.</p></div>
+    <p class="f-meta">Rischio 0 (info) = impatto 0 × probabilità 1
+    · Origine <code>logging:unverifiable</code> · Confidenza bassa:
+    Indicativo: il controllo era incompleto o non conclusivo, verificare a mano.</p>
+  </div>
+</details>
+<details class="finding sev-INFO" id="f-22" data-sev="INFO" data-cat="services" data-search="stato dei servizi non verificabile services services:unverifiable non c&#x27;è un init system riconoscibile (tipico di un container): non si può sapere quali servizi sono attivi o in errore. ">
+  <summary>
+    <span class="pill sev-INFO">Info</span>
+    <span class="f-title">Stato dei servizi non verificabile</span> <span class="pill verify">da verificare</span>
+    <span class="f-cat">services</span>
+  </summary>
+  <div class="f-body">
+    <h4>Cosa significa</h4>
+    <p>Non c&#x27;è un init system riconoscibile (tipico di un container): non si può sapere quali servizi sono attivi o in errore.</p>
+    <h4>Evidenza</h4><pre class="evidence">init: unknown, container docker</pre>
+    <div class="reco"><h4>Cosa fare</h4><p>Verificare a mano su questo sistema: l&#x27;assenza di segnalazioni qui non significa che vada tutto bene.</p></div>
+    <p class="f-meta">Rischio 0 (info) = impatto 0 × probabilità 1
+    · Origine <code>services:unverifiable</code> · Confidenza bassa:
+    Indicativo: il controllo era incompleto o non conclusivo, verificare a mano.</p>
+  </div>
+</details>
+<details class="finding sev-INFO" id="f-23" data-sev="INFO" data-cat="users" data-search="utente con shell di login: claude users users-collector:login-user l&#x27;utente &#x27;claude&#x27; può effettuare un accesso interattivo (shell: /bin/bash). cis 5.1, 5.4 · iso a.5.16, a.8.2 · nist ac-2, ac-6">
+  <summary>
+    <span class="pill sev-INFO">Info</span>
+    <span class="f-title">Utente con shell di login: claude</span>
+    <span class="f-cat">users</span>
+  </summary>
+  <div class="f-body">
+    <h4>Cosa significa</h4>
+    <p>L&#x27;utente &#x27;claude&#x27; può effettuare un accesso interattivo (shell: /bin/bash).</p>
+    <h4>Evidenza</h4><pre class="evidence">claude:x:999:30001::/home/claude:/bin/bash</pre>
+    <div class="reco"><h4>Cosa fare</h4><p>Nessuna azione richiesta.</p></div>
+    <p class="f-meta">Rischio 0 (info) = impatto 0 × probabilità 2
+    · Origine <code>users-collector:login-user</code> · Confidenza media:
+    Probabile: conviene confermarlo.</p>
+    <p class="f-meta refs">Riferimenti: CIS 5.1, 5.4 · ISO A.5.16, A.8.2 · NIST AC-2, AC-6</p>
+  </div>
+</details>
+<details class="finding sev-INFO" id="f-24" data-sev="INFO" data-cat="users" data-search="utente con shell di login: postgres users users-collector:login-user l&#x27;utente &#x27;postgres&#x27; può effettuare un accesso interattivo (shell: /bin/bash). cis 5.1, 5.4 · iso a.5.16, a.8.2 · nist ac-2, ac-6">
+  <summary>
+    <span class="pill sev-INFO">Info</span>
+    <span class="f-title">Utente con shell di login: postgres</span>
+    <span class="f-cat">users</span>
+  </summary>
+  <div class="f-body">
+    <h4>Cosa significa</h4>
+    <p>L&#x27;utente &#x27;postgres&#x27; può effettuare un accesso interattivo (shell: /bin/bash).</p>
+    <h4>Evidenza</h4><pre class="evidence">postgres:x:102:104:PostgreSQL administrator,,,:/var/lib/postgresql:/bin/bash</pre>
+    <div class="reco"><h4>Cosa fare</h4><p>Nessuna azione richiesta.</p></div>
+    <p class="f-meta">Rischio 0 (info) = impatto 0 × probabilità 2
+    · Origine <code>users-collector:login-user</code> · Confidenza media:
+    Probabile: conviene confermarlo.</p>
+    <p class="f-meta refs">Riferimenti: CIS 5.1, 5.4 · ISO A.5.16, A.8.2 · NIST AC-2, AC-6</p>
+  </div>
+</details>
+<details class="finding sev-INFO" id="f-25" data-sev="INFO" data-cat="users" data-search="utente con shell di login: ubuntu users users-collector:login-user l&#x27;utente &#x27;ubuntu&#x27; può effettuare un accesso interattivo (shell: /bin/bash). cis 5.1, 5.4 · iso a.5.16, a.8.2 · nist ac-2, ac-6">
+  <summary>
+    <span class="pill sev-INFO">Info</span>
+    <span class="f-title">Utente con shell di login: ubuntu</span>
+    <span class="f-cat">users</span>
+  </summary>
+  <div class="f-body">
+    <h4>Cosa significa</h4>
+    <p>L&#x27;utente &#x27;ubuntu&#x27; può effettuare un accesso interattivo (shell: /bin/bash).</p>
+    <h4>Evidenza</h4><pre class="evidence">ubuntu:x:1000:1000:Ubuntu:/home/ubuntu:/bin/bash</pre>
+    <div class="reco"><h4>Cosa fare</h4><p>Nessuna azione richiesta.</p></div>
+    <p class="f-meta">Rischio 0 (info) = impatto 0 × probabilità 2
+    · Origine <code>users-collector:login-user</code> · Confidenza media:
+    Probabile: conviene confermarlo.</p>
+    <p class="f-meta refs">Riferimenti: CIS 5.1, 5.4 · ISO A.5.16, A.8.2 · NIST AC-2, AC-6</p>
+  </div>
+</details></div>
+  <p class="empty" id="none" hidden>Nessun finding corrisponde ai filtri.</p>
+</section>
+<section aria-labelledby="guide-title">
+  <h2 id="guide-title">Come leggere il report</h2>
+  <div class="guide">
+    <div><h4>Gravità</h4><ul><li><span class="pill sev-CRITICAL">Critico</span> Problemi gravi: intervenire subito.</li><li><span class="pill sev-HIGH">Alto</span> Problemi importanti: risolvere a breve.</li><li><span class="pill sev-MEDIUM">Medio</span> Debolezze da pianificare.</li><li><span class="pill sev-LOW">Basso</span> Miglioramenti consigliati, impatto limitato.</li><li><span class="pill sev-INFO">Info</span> Informazioni utili: non sono problemi.</li></ul></div>
+    <div><h4>Rischio</h4><p class="muted">Rischio = impatto × probabilità. L'impatto va da 1 (basso) a 4 (critico) ed è la
+    gravità; la probabilità va da 1 a 3 ed è la confidenza del rilevamento. Fasce: 12 critico, 8–11 alto,
+    4–7 medio, 1–3 basso.</p></div>
+    <div><h4>Confidenza</h4><ul><li><strong>Alta</strong>: Rilevato con certezza.</li><li><strong>Media</strong>: Probabile: conviene confermarlo.</li><li><strong>Bassa</strong>: Indicativo: il controllo era incompleto o non conclusivo, verificare a mano.</li></ul>
+    <p class="muted">Un finding informativo o a bassa confidenza può dire che un controllo non è
+    stato possibile (per esempio per mancanza di permessi): non va letto come "tutto a posto".</p></div>
+  </div>
+</section>
+</main>
+<footer class="wrap">
+  <p><strong>Documento riservato.</strong> Contiene dettagli sensibili sul sistema analizzato: condividilo solo con chi deve intervenire.</p>
+  <p class="muted">Generato da WatchDog · controlli eseguiti: linux, users, ssh_config, firewall, services, filesystem, packages, auth_policy, kernel, logging, updates, persistence, protections</p>
+</footer>
+<script>
+(function () {
+  var tools = document.getElementById('tools');
+  if (!tools) return;
+  tools.hidden = false;
+  var cards = Array.prototype.slice.call(document.querySelectorAll('.finding'));
+  var groups = Array.prototype.slice.call(document.querySelectorAll('.group'));
+  var chips = Array.prototype.slice.call(document.querySelectorAll('.card[data-filter]'));
+  var q = document.getElementById('q'), shown = document.getElementById('shown'), none = document.getElementById('none');
+  var sev = null, cat = '';
+  var catSel = document.getElementById('cat');
+  function apply() {
+    var term = q.value.trim().toLowerCase(), n = 0;
+    cards.forEach(function (c) {
+      var ok = (!sev || c.dataset.sev === sev) && (!cat || c.dataset.cat === cat) && (!term || c.dataset.search.indexOf(term) !== -1);
+      c.hidden = !ok; if (ok) n++;
+    });
+    groups.forEach(function (g) {
+      g.hidden = !g.querySelector('.finding:not([hidden])');
+    });
+    chips.forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.filter === sev)); });
+    shown.textContent = n + ' di ' + cards.length + ' finding';
+    none.hidden = n !== 0;
+  }
+  chips.forEach(function (b) {
+    b.addEventListener('click', function () {
+      if (b.disabled) return;
+      sev = (sev === b.dataset.filter) ? null : b.dataset.filter;
+      apply();
+      var t = document.getElementById('find-title'); if (t) t.scrollIntoView();
+    });
+  });
+  if (catSel) catSel.addEventListener('change', function () { cat = catSel.value; apply(); });
+  Array.prototype.forEach.call(document.querySelectorAll('.cats li[data-cat]'), function (li) {
+    li.classList.add('clickable'); li.title = 'Mostra solo questa area';
+    li.addEventListener('click', function () {
+      cat = li.dataset.cat; if (catSel) catSel.value = cat; apply();
+      var t = document.getElementById('find-title'); if (t) t.scrollIntoView();
+    });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('.cmd'), function (box) {
+    var b = box.querySelector('.copy'), pre = box.querySelector('.cmd-text');
+    if (!b || !pre) return;
+    b.hidden = false;
+    b.addEventListener('click', function () {
+      var text = pre.textContent;
+      function done() { b.textContent = 'Copiato ✓'; setTimeout(function () { b.textContent = 'Copia comando'; }, 1800); }
+      function fallback() {
+        var r = document.createRange(); r.selectNodeContents(pre);
+        var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+        try { document.execCommand('copy'); done(); } catch (e) { b.textContent = 'Selezionato: premi Ctrl+C'; }
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done, fallback);
+      } else { fallback(); }
+    });
+  });
+  var links = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  if ('IntersectionObserver' in window && links.length) {
+    var io = new IntersectionObserver(function (es) {
+      es.forEach(function (e) {
+        if (e.isIntersecting) links.forEach(function (l) { l.classList.toggle('on', l.getAttribute('href') === '#' + e.target.id); });
+      });
+    }, { rootMargin: '-10% 0px -80% 0px' });
+    links.forEach(function (l) { var h = document.querySelector(l.getAttribute('href')); if (h) io.observe(h); });
+  }
+
+  function openTarget(sel, scroll) {
+    var t = document.querySelector(sel);
+    if (!t) return null;
+    if (t.tagName === 'DETAILS') t.open = true;
+    if (t.hidden) { sev = null; cat = ''; if (catSel) catSel.value = ''; q.value = ''; apply(); }
+    if (scroll) t.scrollIntoView({ block: 'start' });
+    return t;
+  }
+  var heatRows = Array.prototype.slice.call(document.querySelectorAll('.heat tr[data-area]'));
+  heatRows.forEach(function (tr) {
+    tr.addEventListener('click', function (ev) {
+      ev.preventDefault();
+      var panel = document.getElementById('area-' + tr.dataset.area);
+      if (!panel) return;
+      var wasOn = tr.classList.contains('on') && panel.open;
+      heatRows.forEach(function (r) { r.classList.remove('on'); });
+      document.querySelectorAll('.area-panel').forEach(function (p) { p.open = false; });
+      if (!wasOn) { tr.classList.add('on'); panel.open = true; panel.scrollIntoView({ block: 'start' }); }
+    });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('a.tile[href^="#f-"]'), function (a) {
+    a.addEventListener('click', function (ev) {
+      ev.preventDefault();
+      if (openTarget(a.getAttribute('href'), true)) history.replaceState(null, '', a.getAttribute('href'));
+    });
+  });
+  q.addEventListener('input', apply);
+  document.getElementById('expand').addEventListener('click', function () {
+    cards.forEach(function (c) { if (!c.hidden) c.open = true; });
+  });
+  document.getElementById('collapse').addEventListener('click', function () {
+    cards.forEach(function (c) { c.open = false; });
+  });
+  document.getElementById('reset').addEventListener('click', function () {
+    sev = null; cat = ''; if (catSel) catSel.value = ''; q.value = ''; apply();
+  });
+  if (location.hash) {
+    var t = document.querySelector(location.hash.replace(/[^#\w-]/g, ''));
+    if (t && t.tagName === 'DETAILS') t.open = true;
+  }
+  apply();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}WatchDog{% endblock %} – WatchDog</title>
+<link rel="stylesheet" href="/static/app.css?v={{ version }}">
+<link rel="icon" href="/static/icon.svg" type="image/svg+xml">
+</head>
+<body>
+{% if user %}
+<div class="shell">
+  <aside class="side">
+    <a class="brand" href="/">WatchDog <small>Analisi di sicurezza dei sistemi</small></a>
+    <nav aria-label="Sezioni">
+      <a href="/" {% if path == '/' %}aria-current="page"{% endif %}>Quadro generale</a>
+      <a href="/insights" {% if path.startswith('/insights') %}aria-current="page"{% endif %}>Analisi</a>
+      <a href="/map" {% if path.startswith('/map') %}aria-current="page"{% endif %}>Mappa della rete</a>
+      <a href="/targets" {% if path.startswith('/targets') %}aria-current="page"{% endif %}>Macchine</a>
+      <a href="/scans" {% if path.startswith('/scans') or path.startswith('/compare') %}aria-current="page"{% endif %}>Scansioni</a>
+      {% if user.can('admin') %}
+      <a href="/users" {% if path.startswith('/users') %}aria-current="page"{% endif %}>Utenti</a>
+      <a href="/audit" {% if path.startswith('/audit') %}aria-current="page"{% endif %}>Registro attività</a>
+      {% endif %}
+    </nav>
+    <div class="who">
+      <a href="/account">{{ user.full_name or user.username }}</a><br>
+      <span>{{ ROLE_LABEL[user.role] }}</span>
+      <form method="post" action="/logout"><input type="hidden" name="csrf" value="{{ csrf }}"><button type="submit">Esci</button></form>
+    </div>
+  </aside>
+  <main>
+    {% if flash %}<div class="note {{ flash[0] }}" role="status"><p>{{ flash[1] }}</p></div>{% endif %}
+    {% block content %}{% endblock %}
+  </main>
+</div>
+{% else %}
+{% block bare %}<main>{% block bare_content %}{% endblock %}</main>{% endblock %}
+{% endif %}
+<div class="tip" role="tooltip" hidden></div>
+<script src="/static/app.js?v={{ version }}" defer></script>
+</body>
+</html>

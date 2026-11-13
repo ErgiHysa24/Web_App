@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Verifica in due passaggi{% endblock %}
+{% block bare %}
+<div class="login">
+  <div class="panel-side">
+    <h1>WatchDog</h1>
+    <p>Ultimo passo: senza il codice del telefono nessuno può entrare con il tuo account, anche se scopre la password.</p>
+  </div>
+  <div class="form wide">
+    <h2>Attiva la verifica in due passaggi</h2>
+    {% if error %}<div class="note error" role="alert"><p>{{ error }}</p></div>{% endif %}
+    <ol class="steps">
+      <li>Installa sul telefono un'app di autenticazione: Google Authenticator, Microsoft Authenticator, Aegis o FreeOTP.</li>
+      <li>Nell'app scegli «Aggiungi» e inquadra il codice QR.
+        <img class="qr" src="{{ qr }}" alt="Codice QR per l'app di autenticazione" width="245" height="245">
+        Oppure inserisci a mano la chiave:<br><span class="token">{{ secret }}</span></li>
+      <li>Scrivi il codice di 6 cifre che compare nell'app.
+        <form method="post" action="/register/2fa" class="filters">
+          <input type="hidden" name="csrf" value="{{ csrf }}">
+          <input type="text" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="7" required aria-label="Codice dell'app" class="w12" autofocus>
+          <button class="btn" type="submit">Completa la registrazione</button>
+        </form></li>
+    </ol>
+    <p class="small muted">Hai 30 minuti per completare la registrazione di «{{ username }}», poi va ricominciata.</p>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block title %}Macchine{% endblock %}
+{% block content %}
+<div class="head">
+  <div><h1>Macchine{% if archived %} archiviate{% endif %}</h1>
+  <p class="lead">{% if user.can('admin') %}Tutte le macchine registrate, di ogni utente.{% else %}Le tue macchine e quelle che altri hanno condiviso con te.{% endif %}</p></div>
+  <div class="actions">
+    {% if archived %}<a class="btn quiet" href="/targets">Torna alle attive</a>{% else %}<a class="btn quiet" href="/targets?archived=1">Archiviate</a>{% endif %}
+    {% if user.can('scan') %}<a class="btn" href="/targets/new">Aggiungi macchina</a>{% endif %}
+  </div>
+</div>
+{% if tags or user.can('scan') %}{{ m.filters('/targets', tags, tag, mine, user) }}{% endif %}
+{% if not targets %}
+<div class="empty"><p>{% if tag or mine %}Nessuna macchina con questo filtro.{% elif archived %}Nessuna macchina archiviata.{% elif user.can('scan') %}Nessuna macchina. Aggiungine una per iniziare.{% else %}Nessuna macchina condivisa con te.{% endif %}</p></div>
+{% else %}
+<div class="wrap"><table class="list">
+  <thead><tr><th>Nome</th><th>Tag</th><th>Collegamento</th>{% if user.can('admin') %}<th>Di</th>{% endif %}<th>Ultima analisi</th><th>Esito</th><th></th></tr></thead>
+  <tbody>
+  {% for t in targets %}{% set x = latest.get(t.id) %}
+  <tr>
+    <td><a href="/targets/{{ t.id }}"><b>{{ t.name }}</b></a>{% if t.created_by != user.id and not user.can('admin') %}<br><span class="small muted">condivisa da {{ t.owner.username if t.owner else '—' }}</span>{% endif %}</td>
+    <td>{{ m.tags(t.tags, '/targets') }}</td>
+    <td class="mono">{{ t.address }}</td>
+    {% if user.can('admin') %}<td>{{ t.owner.username if t.owner else '—' }}</td>{% endif %}
+    <td class="num">{% if x %}<a href="/scans/{{ x.id }}">{{ x.finished_at|dt }}</a>{% else %}<span class="muted">mai</span>{% endif %}</td>
+    <td class="esito">{% if x %}<span class="sev lv-{{ x.risk_level }}">{{ x.risk_score }}/100</span> {{ m.counts(x) }}{% endif %}</td>
+    <td class="r">{% if user.can('scan') and not t.archived %}<a class="btn quiet small" href="/scans/new?target={{ t.id }}">Analizza</a>{% endif %}</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% endif %}
+{% endblock %}

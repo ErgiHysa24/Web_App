@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block title %}Analisi{% endblock %}
+{% block content %}
+<div class="head">
+  <div><h1>Analisi{% if tag %} di «{{ tag }}»{% endif %}</h1>
+  <p class="lead">Come stanno le macchine nel loro insieme, secondo l'ultima scansione completata di ognuna.</p></div>
+</div>
+{% if tags or user.can('scan') %}{{ m.filters('/insights', tags, tag, mine, user) }}{% endif %}
+
+{% if not analysed %}
+<div class="empty"><p>{% if targets %}Nessuna di queste macchine ha ancora una scansione completata.{% else %}Nessuna macchina{% if tag or mine %} con questo filtro{% endif %}.{% endif %}</p></div>
+{% else %}
+<ul class="figures">
+  <li><b>{{ avg_score }}</b> rischio medio su 100</li>
+  <li><b>{{ analysed|length }}</b> {{ 'macchina analizzata' if analysed|length == 1 else 'macchine analizzate' }}{% if targets|length > analysed|length %} di {{ targets|length }}{% endif %}</li>
+  <li><b>{{ totals.CRITICAL }}</b> problemi critici</li>
+  <li><b>{{ totals.HIGH }}</b> problemi alti</li>
+</ul>
+
+<div class="grid2">
+<section class="panel">
+  <h2 class="mt0">Problemi per gravità</h2>
+  {% if severity_chart %}
+  <div class="chart-wrap">{{ severity_chart }}</div>
+  <div class="legend">{% for s in SEVERITIES[:4] %}<span><i class="lv-{{ s }}"></i>{{ SEVERITY_LABEL[s]|lower }}: {{ totals[s] }}</span>{% endfor %}</div>
+  {% else %}<p class="muted">Nessun problema trovato dai controlli eseguiti.</p>{% endif %}
+</section>
+<section class="panel">
+  <h2 class="mt0">Problemi per area</h2>
+  {% if area_chart %}
+  <div class="legend m0">{% for s in SEVERITIES[:4] %}<span><i class="lv-{{ s }}"></i>{{ SEVERITY_LABEL[s]|lower }}</span>{% endfor %}</div>
+  <div class="chart-wrap">{{ area_chart }}</div>
+  {% else %}<p class="muted">Nessun problema trovato dai controlli eseguiti.</p>{% endif %}
+</section>
+</div>
+
+<section class="panel">
+  <h2 class="mt0">Confronto tra macchine</h2>
+  <p class="small muted">Rischio dell'ultima scansione, dalla macchina messa peggio. Sotto il nome: livello e variazione rispetto alla scansione precedente.</p>
+  <div class="chart-wrap">{{ machine_chart }}</div>
+  <details class="more"><summary>Mostra come tabella</summary>
+  <table class="list">
+    <thead><tr><th>Macchina</th><th class="r">Rischio</th><th class="r">Variazione</th><th>Critici</th><th>Alti</th><th>Medi</th><th>Bassi</th><th>Non completati</th></tr></thead>
+    <tbody>{% for r in machine_rows %}<tr>
+      <td><a href="{{ r.href }}">{{ r.label }}</a></td><td class="num r">{{ r.value }}</td>
+      <td class="num r">{% if r.delta %}{{ '%+d'|format(r.delta) }}{% else %}—{% endif %}</td>
+      {% for s in SEVERITIES[:4] %}<td class="num">{{ r.scan.counts.get(s, 0) }}</td>{% endfor %}
+      <td class="num">{{ r.scan.incomplete }}</td></tr>{% endfor %}</tbody>
+  </table></details>
+</section>
+
+{% if tag_chart %}
+<section class="panel">
+  <h2 class="mt0">Confronto tra tag</h2>
+  <p class="small muted">Rischio medio delle macchine con ciascun tag (una macchina può avere più tag). Clicca per vedere solo quel gruppo.</p>
+  <div class="chart-wrap">{{ tag_chart }}</div>
+  <details class="more"><summary>Mostra come tabella</summary>
+  <table class="list"><thead><tr><th>Tag</th><th class="r">Rischio medio</th><th class="r">Macchine</th><th>Peggiore</th></tr></thead>
+  <tbody>{% for r in tag_rows %}<tr><td><a href="{{ r.href }}">{{ r.label }}</a></td><td class="num r">{{ r.value }}</td><td class="num r">{{ r.count }}</td><td>{{ r.worst.name }}</td></tr>{% endfor %}</tbody></table>
+  </details>
+</section>
+{% endif %}
+
+<section class="panel">
+  <h2 class="mt0">Andamento nel tempo</h2>
+  <p class="small muted">Rischio delle ultime scansioni di ogni macchina, dalla più vecchia (a sinistra) alla più recente. Stessa scala da 0 a 100 per tutte.</p>
+  <div class="multiples">
+  {% for tr in trends %}
+    <a class="multiple" href="/targets/{{ tr.target.id }}">
+      <span class="mname">{{ tr.target.name }}</span>
+      {% if tr.history|length >= 2 %}{{ tr.chart }}
+      <span class="mvals"><span>{{ tr.history[0].score }}</span><span class="num">{{ tr.history[-1].score }}</span></span>
+      {% else %}<span class="muted small">una sola scansione ({{ tr.history[0].score }})</span>{% endif %}
+    </a>
+  {% endfor %}
+  </div>
+</section>
+{% endif %}
+{% endblock %}
