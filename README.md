@@ -37,8 +37,8 @@ resto — Python, PostgreSQL, le librerie — sta dentro le immagini: non si ins
 
 ```sh
 # 1. Clona il repository
-git clone https://github.com/ErgiHysa24/watchdog-web.git
-cd watchdog-web/webapp
+git clone https://github.com/ErgiHysa24/Web_App.git
+cd Web_App/webapp
 
 # 2. Crea il file .env (chiavi casuali e indirizzi di questo computer per il certificato HTTPS)
 python3 setup_env.py                 # su Windows: python setup_env.py
@@ -135,7 +135,7 @@ Dettaglio completo d'uso in **[`webapp/README.md`](webapp/README.md)**; la relaz
 ## Struttura del repository
 
 ```
-watchdog-web/
+Web_App/
 ├── README.md               questo file
 ├── RELAZIONE.md            relazione tecnica dell'applicazione web
 ├── docs/                   screenshot e materiale

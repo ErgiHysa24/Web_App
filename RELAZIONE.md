@@ -4,7 +4,7 @@
 sistemi Linux e macOS
 **Autore:** Ergi Hysa
 **Anno accademico:** 2025–2026
-**Repository:** <https://github.com/ErgiHysa24/watchdog-web>
+**Repository:** <https://github.com/ErgiHysa24/Web_App>
 
 ---
 

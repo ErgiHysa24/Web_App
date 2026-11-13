@@ -48,8 +48,8 @@ curl -fsSL https://get.docker.com | sudo sh
 sudo usermod -aG docker $USER      # poi esci e rientra
 
 # 2. Il codice
-git clone https://github.com/ErgiHysa24/WatchDog_riskAssessment.git
-cd WatchDog_riskAssessment/webapp
+git clone https://github.com/ErgiHysa24/Web_App.git
+cd Web_App/webapp
 
 # 3. Il file .env: chiavi casuali e indirizzi di questo computer per il certificato HTTPS
 python3 setup_env.py                   # su Windows: python setup_env.py
